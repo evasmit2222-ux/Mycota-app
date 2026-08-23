@@ -178,7 +178,6 @@
               <span style="font:600 12px var(--font-body);color:var(--color-accent-700);white-space:nowrap">{{ predDayLabel }}</span>
             </div>
             <input type="range" min="0" max="7" step="1" value="{{ predDay }}" onChange="{{ onPredDay }}" style="width:100%;margin-top:6px;accent-color:var(--color-accent)"/>
-            <sc-if value="{{ predDayCoarse }}"><div style="font:500 11px var(--font-body);color:var(--color-neutral-600);margin-top:2px">{{ tForecastCoarser }}</div></sc-if>
           </div>
           <button class="mv-tap" onClick="{{ onSyncForecast }}" style="width:100%;margin-top:12px;padding:10px 14px;border-radius:999px;background:var(--color-accent-100);color:var(--color-accent-800);font:600 12px var(--font-body);text-align:center">{{ syncForecastLabel }}</button>
           <sc-if value="{{ forecastBadge }}"><div style="font:500 11px var(--font-body);color:var(--color-neutral-600);margin-top:6px;text-align:center">{{ forecastBadge }}</div></sc-if>
@@ -833,7 +832,6 @@ const T={
     predNote:'1 km hexagon grid scored from phenology ({s}), soil moisture and {b}; cells near places with the same host tree or habitat score too. Darker = higher chance.',
     hexZoom:'Zoom in to draw the 1 km grid.',
     forecastDay:'Forecast day',forecastToday:'Today',forecastTomorrow:'Tomorrow',forecastDayOffset:'+{n}d',
-    forecastCoarser:'Coarser 10 km grid beyond today.',
     forecastNoData:'Forecast not computed that far out yet — try a nearer day.',
     weather:'Weather & soil moisture',refresh:'Refresh',rain7:'{mm} mm rain in the past week',
     wxNoPos:'No position yet — turn on GPS for a local forecast.',wxLoading:'Fetching forecast…',
@@ -910,7 +908,6 @@ const T={
     predNote:'Zeshoekig raster van 1 km, gescoord op fenologie ({s}), bodemvocht en {b}; cellen bij plekken met dezelfde waardboom of hetzelfde bostype scoren mee. Donker = hoogste kans.',
     hexZoom:'Zoom in om het 1 km-raster te tekenen.',
     forecastDay:'Verwachtingsdag',forecastToday:'Vandaag',forecastTomorrow:'Morgen',forecastDayOffset:'+{n}d',
-    forecastCoarser:'Grover 10 km-raster na vandaag.',
     forecastNoData:'Nog geen verwachting zo ver vooruit — probeer een dichtere dag.',
     weather:'Weer & bodemvocht',refresh:'Verversen',rain7:'{mm} mm regen in de afgelopen week',
     wxNoPos:'Nog geen positie — zet GPS aan voor een lokale verwachting.',wxLoading:'Verwachting ophalen…',
@@ -1339,13 +1336,8 @@ class Component extends DCLogic {
     }
     const L=window.L, map=this._map, sp=SP[idx];
     const species=slugifySpecies(sp.ln);
-    const mapZoom=map.getZoom();
-    // The 1km tier is only ever computed for today (mycol.hex_1km_species
-    // holds one date, overwritten nightly) — the server silently ignores
-    // ?date= there. So a future day forces the 10km tier, which the API does
-    // compute per date; today keeps whatever resolution the map zoom implies.
+    const zoom=map.getZoom();
     const day=this.state.predDay||0;
-    const zoom=(day>0&&tierZoom(mapZoom)===12)?8:mapZoom;
     const date=day>0?offsetDateStr(day):null;
     const b=map.getBounds();
     const bbox=[b.getWest(),b.getSouth(),b.getEast(),b.getNorth()];
@@ -1495,7 +1487,7 @@ const imgRef=u=>(node)=>{ if(node&&u&&node.getAttribute('src')!==u) node.setAttr
 
     return {
       tRecords:t.records,tToday:t.today,tSpecies:t.species,tUnsure:t.unsure,tNewRecord:t.newRecord,tLatest:t.latest,tAll:t.all,tEmptyHome:t.emptyHome,
-      tMyPosition:t.myPosition,tRecordHere:t.recordHere,tChance:t.chance,tForecastDay:t.forecastDay,tForecastCoarser:t.forecastCoarser,tPhotoAngles:t.photoAngles,tSpeciesLabel:t.speciesLabel,tSearchSpecies:t.searchSpecies,
+      tMyPosition:t.myPosition,tRecordHere:t.recordHere,tChance:t.chance,tForecastDay:t.forecastDay,tPhotoAngles:t.photoAngles,tSpeciesLabel:t.speciesLabel,tSearchSpecies:t.searchSpecies,
       tNoSpeciesMatch:t.noSpeciesMatch,tConfidence:t.confidence,tSubstrate:t.substrate,tHostHabitat:t.hostHabitat,tCount:t.count,tFruitbodies:t.fruitbodies,
       tNotes:t.notes,tNotesPlaceholder:t.notesPlaceholder,tDiscard:t.discard,tSearchRecords:t.searchRecords,tBackToList:t.backToList,tBackToSpecies:t.backToSpecies,
       tComplete:t.complete,tIdWarning:t.idWarning,tRecordThisSpecies:t.recordThis,tBack:t.back,tLanguage:t.language,tObserver:t.observer,tObserverPlaceholder:t.observerPh,
@@ -1596,7 +1588,6 @@ const imgRef=u=>(node)=>{ if(node&&u&&node.getAttribute('src')!==u) node.setAttr
       predDayLabel: !st.predDay ? t.forecastToday
         : st.predDay===1 ? t.forecastTomorrow
         : t.forecastDayOffset.replace('{n}',st.predDay)+' · '+new Date(offsetDateStr(st.predDay)).toLocaleDateString(loc,{day:'numeric',month:'short'}),
-      predDayCoarse: st.predDay>0 && this._map && tierZoom(this._map.getZoom())===12,
       onPredDay:(e)=>this.setState({predDay:Number(e.target.value)}),
       syncForecastLabel: st.syncingForecast ? t.syncing : t.syncForecast,
       onSyncForecast: ()=>this.syncForecastForViewport(),
