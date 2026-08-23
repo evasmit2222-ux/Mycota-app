@@ -172,6 +172,14 @@
               <div style="font:400 17px/1.2 var(--font-heading);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ predTitle }}</div>
             </div>
           </div>
+          <div style="margin-top:12px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <span class="mv-kicker">{{ tForecastDay }}</span>
+              <span style="font:600 12px var(--font-body);color:var(--color-accent-700);white-space:nowrap">{{ predDayLabel }}</span>
+            </div>
+            <input type="range" min="0" max="7" step="1" value="{{ predDay }}" onChange="{{ onPredDay }}" style="width:100%;margin-top:6px;accent-color:var(--color-accent)"/>
+            <sc-if value="{{ predDayCoarse }}"><div style="font:500 11px var(--font-body);color:var(--color-neutral-600);margin-top:2px">{{ tForecastCoarser }}</div></sc-if>
+          </div>
           <button class="mv-tap" onClick="{{ onSyncForecast }}" style="width:100%;margin-top:12px;padding:10px 14px;border-radius:999px;background:var(--color-accent-100);color:var(--color-accent-800);font:600 12px var(--font-body);text-align:center">{{ syncForecastLabel }}</button>
           <sc-if value="{{ forecastBadge }}"><div style="font:500 11px var(--font-body);color:var(--color-neutral-600);margin-top:6px;text-align:center">{{ forecastBadge }}</div></sc-if>
           <div style="font-size:11.5px;line-height:1.55;color:var(--color-neutral-700);margin-top:11px">{{ predNote }}</div>
@@ -697,39 +705,48 @@ const EARTH35_BASE='http://192.168.2.4:5050';
 function slugifySpecies(name){
   return name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
 }
+// 'today' | 'today+3' | … — the local (not UTC) calendar date n days out, as
+// the API's ?date= param expects it. Local, not toISOString(), so a request
+// made shortly after local midnight doesn't skip a day.
+function offsetDateStr(n){
+  const d=new Date(); d.setDate(d.getDate()+n);
+  const pad=v=>String(v).padStart(2,'0');
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
 // The server serves three resolution tiers; the sync pre-caches at 8/12/15.
 // Cache keys snap to the tier representative so a tile cached by the sync is
 // still found when the user is at, say, zoom 13 or 16 in the field.
 function tierZoom(zoom){ return zoom<11?8:zoom<14?12:15; }
-function tileKey(species,zoom,bbox){
+function tileKey(species,zoom,bbox,date){
   const tz=tierZoom(zoom);
   // Rounding must be fine enough that two visibly different viewports at the
   // same tier get different keys: 0.01deg (~1.1 km) is coarser than a whole
   // 100 m-tier viewport, so it tightens as the tier gets finer.
   const step=tz===8?0.01:tz===12?0.005:0.001;
   const r=v=>(Math.round(v/step)*step).toFixed(4);
-  return species+'|'+tz+'|'+bbox.map(r).join(',');
+  return species+'|'+tz+'|'+(date||'today')+'|'+bbox.map(r).join(',');
 }
-async function fetchForecastTile(species,zoom,bbox){
+async function fetchForecastTile(species,zoom,bbox,date){
   const url=EARTH35_BASE+'/api/fruiting/grid?species='+encodeURIComponent(species)
-    +'&zoom='+zoom+'&bbox='+bbox.map(v=>v.toFixed(5)).join(',');
+    +'&zoom='+zoom+'&bbox='+bbox.map(v=>v.toFixed(5)).join(',')
+    +(date?'&date='+date:'');
   const r=await fetch(url,{signal:AbortSignal.timeout(6000)});
   if(!r.ok) throw new Error('forecast fetch failed: '+r.status);
   const geojson=await r.json();
-  const rec={k:tileKey(species,zoom,bbox),species,tier:tierZoom(zoom),bbox,geojson,fetchedAt:Date.now()};
+  const rec={k:tileKey(species,zoom,bbox,date),species,tier:tierZoom(zoom),date:date||'today',bbox,geojson,fetchedAt:Date.now()};
   await put(FORECAST,rec);
   return rec;
 }
-async function getCachedForecastTile(species,zoom,bbox){
+async function getCachedForecastTile(species,zoom,bbox,date){
   const cached=await all(FORECAST);
-  const key=tileKey(species,zoom,bbox);
+  const key=tileKey(species,zoom,bbox,date);
   const exact=cached.find(r=>r.k===key);
   if(exact) return exact;
   // The pre-field sync caches one wide tile per tier, so once the user pans or
   // zooms an exact key match is rare. Fall back to the newest cached tile of the
-  // same species and tier whose extent still covers the current viewport.
-  const tier=tierZoom(zoom), eps=1e-9;
-  const covering=cached.filter(r=>r.species===species&&r.tier===tier&&Array.isArray(r.bbox)
+  // same species, tier and target date whose extent still covers the viewport.
+  const tier=tierZoom(zoom), d=date||'today', eps=1e-9;
+  const covering=cached.filter(r=>r.species===species&&r.tier===tier&&(r.date||'today')===d&&Array.isArray(r.bbox)
     &&r.bbox[0]<=bbox[0]+eps&&r.bbox[1]<=bbox[1]+eps
     &&r.bbox[2]>=bbox[2]-eps&&r.bbox[3]>=bbox[3]-eps);
   if(!covering.length) return null;
@@ -815,6 +832,9 @@ const T={
     tags:{deadly:'Deadly',toxic:'Toxic',caution:'Caution',edible:'Edible',inedible:'Inedible',restricted:'Restricted'},
     predNote:'1 km hexagon grid scored from phenology ({s}), soil moisture and {b}; cells near places with the same host tree or habitat score too. Darker = higher chance.',
     hexZoom:'Zoom in to draw the 1 km grid.',
+    forecastDay:'Forecast day',forecastToday:'Today',forecastTomorrow:'Tomorrow',forecastDayOffset:'+{n}d',
+    forecastCoarser:'Coarser 10 km grid beyond today.',
+    forecastNoData:'Forecast not computed that far out yet — try a nearer day.',
     weather:'Weather & soil moisture',refresh:'Refresh',rain7:'{mm} mm rain in the past week',
     wxNoPos:'No position yet — turn on GPS for a local forecast.',wxLoading:'Fetching forecast…',
     wxOffline:'No connection — showing the last forecast from {d}.',wxNever:'No forecast stored yet. Connect once and it stays available offline.',
@@ -889,6 +909,9 @@ const T={
     tags:{deadly:'Dodelijk',toxic:'Giftig',caution:'Let op',edible:'Eetbaar',inedible:'Niet eetbaar',restricted:'Wettelijk beperkt'},
     predNote:'Zeshoekig raster van 1 km, gescoord op fenologie ({s}), bodemvocht en {b}; cellen bij plekken met dezelfde waardboom of hetzelfde bostype scoren mee. Donker = hoogste kans.',
     hexZoom:'Zoom in om het 1 km-raster te tekenen.',
+    forecastDay:'Verwachtingsdag',forecastToday:'Vandaag',forecastTomorrow:'Morgen',forecastDayOffset:'+{n}d',
+    forecastCoarser:'Grover 10 km-raster na vandaag.',
+    forecastNoData:'Nog geen verwachting zo ver vooruit — probeer een dichtere dag.',
     weather:'Weer & bodemvocht',refresh:'Verversen',rain7:'{mm} mm regen in de afgelopen week',
     wxNoPos:'Nog geen positie — zet GPS aan voor een lokale verwachting.',wxLoading:'Verwachting ophalen…',
     wxOffline:'Geen verbinding — laatste verwachting van {d}.',wxNever:'Nog geen verwachting opgeslagen. Verbind één keer en hij blijft offline beschikbaar.',
@@ -1153,7 +1176,7 @@ const MOIST=[0.45,1,1.25];
 const emptyDraft=()=>({id:null,photos:[],species:0,conf:1,subs:[0],host:0,habitat:0,count:1,notes:''});
 
 class Component extends DCLogic {
-  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,moist:1,hexNote:'',photos:{},step:0,spOpen:false,keyMode:0,keyNode:'k1',keyTrail:[],keyEnd:null,keyOn:false,keyShape:null,keySub:null,keyHym:null,syncingForecast:false,forecastAsOf:null};
+  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,predDay:0,moist:1,hexNote:'',photos:{},step:0,spOpen:false,keyMode:0,keyNode:'k1',keyTrail:[],keyEnd:null,keyOn:false,keyShape:null,keySub:null,keyHym:null,syncingForecast:false,forecastAsOf:null};
   mapRef=React.createRef();
 
   t(){ const l=this.state.lang||(this.props.language==='Nederlands'?'nl':'en'); return T[l]||T.en; }
@@ -1316,30 +1339,42 @@ class Component extends DCLogic {
     }
     const L=window.L, map=this._map, sp=SP[idx];
     const species=slugifySpecies(sp.ln);
-    const zoom=map.getZoom();
+    const mapZoom=map.getZoom();
+    // The 1km tier is only ever computed for today (mycol.hex_1km_species
+    // holds one date, overwritten nightly) — the server silently ignores
+    // ?date= there. So a future day forces the 10km tier, which the API does
+    // compute per date; today keeps whatever resolution the map zoom implies.
+    const day=this.state.predDay||0;
+    const zoom=(day>0&&tierZoom(mapZoom)===12)?8:mapZoom;
+    const date=day>0?offsetDateStr(day):null;
     const b=map.getBounds();
     const bbox=[b.getWest(),b.getSouth(),b.getEast(),b.getNorth()];
     // Guard: setState below re-renders, which re-enters ensureMap/drawMarkers/drawPrediction.
     // Without this key check that would be an endless fetch loop.
-    const key=tileKey(species,zoom,bbox);
+    const key=tileKey(species,zoom,bbox,date);
     if(this._predKey===key) return;
     this._predKey=key;
     this._pred.clearLayers();
 
     let tile=null, fromCache=false;
     try{
-      tile=await fetchForecastTile(species,zoom,bbox);
-      // A newer call (species change, pan, zoom) started while we awaited —
+      tile=await fetchForecastTile(species,zoom,bbox,date);
+      // A newer call (species change, pan, zoom, day) started while we awaited —
       // it owns this._pred now, so drop this result instead of drawing stale hexes.
       if(this._predKey!==key) return;
     }catch(err){
       if(this._predKey!==key) return;
-      tile=await getCachedForecastTile(species,zoom,bbox);
+      tile=await getCachedForecastTile(species,zoom,bbox,date);
       if(this._predKey!==key) return;
       fromCache=true;
     }
     if(!tile){ this.setState({hexNote:'offline',forecastAsOf:null}); return; }
-    this.setState({hexNote:fromCache?'cached':'', forecastAsOf:tile.fetchedAt});
+    // The scored horizon (knmi.fruiting_scores) can fall a day or two short of
+    // the 7-day slider max — the underlying weather forecast doesn't always
+    // reach that far out yet. An empty-but-valid tile means "not computed
+    // yet", not "offline" or "no chance anywhere".
+    const noData=tile.geojson.features.length===0;
+    this.setState({hexNote:noData?'nodata':(fromCache?'cached':''), forecastAsOf:tile.fetchedAt});
 
     for(const f of tile.geojson.features){
       const p=f.properties.prob;
@@ -1460,7 +1495,7 @@ const imgRef=u=>(node)=>{ if(node&&u&&node.getAttribute('src')!==u) node.setAttr
 
     return {
       tRecords:t.records,tToday:t.today,tSpecies:t.species,tUnsure:t.unsure,tNewRecord:t.newRecord,tLatest:t.latest,tAll:t.all,tEmptyHome:t.emptyHome,
-      tMyPosition:t.myPosition,tRecordHere:t.recordHere,tChance:t.chance,tPhotoAngles:t.photoAngles,tSpeciesLabel:t.speciesLabel,tSearchSpecies:t.searchSpecies,
+      tMyPosition:t.myPosition,tRecordHere:t.recordHere,tChance:t.chance,tForecastDay:t.forecastDay,tForecastCoarser:t.forecastCoarser,tPhotoAngles:t.photoAngles,tSpeciesLabel:t.speciesLabel,tSearchSpecies:t.searchSpecies,
       tNoSpeciesMatch:t.noSpeciesMatch,tConfidence:t.confidence,tSubstrate:t.substrate,tHostHabitat:t.hostHabitat,tCount:t.count,tFruitbodies:t.fruitbodies,
       tNotes:t.notes,tNotesPlaceholder:t.notesPlaceholder,tDiscard:t.discard,tSearchRecords:t.searchRecords,tBackToList:t.backToList,tBackToSpecies:t.backToSpecies,
       tComplete:t.complete,tIdWarning:t.idWarning,tRecordThisSpecies:t.recordThis,tBack:t.back,tLanguage:t.language,tObserver:t.observer,tObserverPlaceholder:t.observerPh,
@@ -1557,9 +1592,16 @@ const imgRef=u=>(node)=>{ if(node&&u&&node.getAttribute('src')!==u) node.setAttr
       },
       predOn:st.predSpecies!=null,
       predTitle:st.predSpecies!=null?sp(st.predSpecies).cn+' · '+this.seasonLabel(SP[st.predSpecies].season):'',
+      predDay:st.predDay||0,
+      predDayLabel: !st.predDay ? t.forecastToday
+        : st.predDay===1 ? t.forecastTomorrow
+        : t.forecastDayOffset.replace('{n}',st.predDay)+' · '+new Date(offsetDateStr(st.predDay)).toLocaleDateString(loc,{day:'numeric',month:'short'}),
+      predDayCoarse: st.predDay>0 && this._map && tierZoom(this._map.getZoom())===12,
+      onPredDay:(e)=>this.setState({predDay:Number(e.target.value)}),
       syncForecastLabel: st.syncingForecast ? t.syncing : t.syncForecast,
       onSyncForecast: ()=>this.syncForecastForViewport(),
-      forecastBadge: st.forecastAsOf
+      forecastBadge: st.hexNote==='nodata' ? t.forecastNoData
+        : st.forecastAsOf
         ? (st.hexNote==='cached'
             ? t.forecastCached
             : t.forecastAsOf.replace('{t}', new Date(st.forecastAsOf).toLocaleTimeString(loc)))
