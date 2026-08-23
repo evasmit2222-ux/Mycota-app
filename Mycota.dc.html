@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/organic-03469acc-bda2-49cb-acdc-ae8619d74f03/styles.css">
+<script src="_ds/organic-03469acc-bda2-49cb-acdc-ae8619d74f03/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  html, body { margin:0; height:100%; background:var(--color-bg); }
+  a { color: var(--color-accent-700); text-decoration:none; }
+  a:hover { color: var(--color-accent-800); }
+  .mv-scroll { flex:1; overflow-y:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .mv-scroll::-webkit-scrollbar { display:none; }
+  .mv-tap { all:unset; cursor:pointer; display:block; box-sizing:border-box; }
+  .mv-tap:focus-visible { outline:2px solid var(--color-accent); outline-offset:2px; }
+  .mv-row { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
+  .mv-row::-webkit-scrollbar { display:none; }
+  .mv-kicker { font:600 10px/1 var(--font-body); letter-spacing:.12em; text-transform:uppercase; color:var(--color-neutral-600); }
+  .mv-input { width:100%; box-sizing:border-box; padding:13px 15px; border-radius:999px; border:1px solid var(--color-divider); background:var(--color-neutral-100); font:400 14px var(--font-body); color:var(--color-text); }
+  .leaflet-container { font-family: var(--font-body); background:#ded6c1; }
+  .leaflet-tile { filter: saturate(.62) contrast(.92) brightness(1.05); }
+  .leaflet-control-attribution { font-size:9px; background:rgba(253,246,234,.8); }
+</style>
+</helmet>
+
+<div style="height:100vh;display:flex;flex-direction:column;max-width:520px;margin:0 auto;background:var(--color-bg);font-family:var(--font-body);color:var(--color-text);position:relative;overflow:hidden">
+
+  <div style="flex:none;padding:18px 20px 8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+    <div style="min-width:0">
+      <div class="mv-kicker">{{ headerKicker }}</div>
+      <h2 style="font-size:25px;margin:8px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headerTitle }}</h2>
+    </div>
+    <button class="mv-tap" onClick="{{ toggleGps }}" style="flex:none;display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;background:{{ gpsBg }};color:{{ gpsFg }};font:600 11.5px/1 var(--font-body);white-space:nowrap">
+      <span style="width:7px;height:7px;border-radius:50%;background:currentColor"></span>{{ gpsLabel }}
+    </button>
+  </div>
+
+  <!-- TODAY -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div class="mv-scroll" style="padding:8px 20px 112px">
+      <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-sm)">
+        <div style="display:flex;gap:16px;align-items:center">
+          <div style="width:88px;height:88px;flex:none;border-radius:50%;background:var(--color-accent-200);display:flex;align-items:center;justify-content:center">
+            <div style="width:66px;height:66px;border-radius:50%;background:var(--color-neutral-100);display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font:400 26px/1 var(--font-heading);color:var(--color-accent-700)">{{ recordCount }}</div>
+              <div style="font:600 8px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600);margin-top:4px">{{ tRecords }}</div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font:400 18px/1.2 var(--font-heading)">{{ homeHeadline }}</div>
+            <div style="font-size:12.5px;line-height:1.55;color:var(--color-neutral-700);margin-top:7px">{{ homeSub }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:18px;margin-top:16px;padding-top:14px;border-top:1px solid var(--color-divider)">
+          <div style="flex:1">
+            <div class="mv-kicker">{{ tToday }}</div>
+            <div style="font:400 19px/1 var(--font-heading);margin-top:6px">{{ todayCount }}</div>
+          </div>
+          <div style="flex:1">
+            <div class="mv-kicker">{{ tSpecies }}</div>
+            <div style="font:400 19px/1 var(--font-heading);margin-top:6px">{{ speciesCount }}</div>
+          </div>
+          <div style="flex:1">
+            <div class="mv-kicker">{{ tUnsure }}</div>
+            <div style="font:400 19px/1 var(--font-heading);margin-top:6px">{{ unsureCount }}</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="mv-tap" onClick="{{ startDraft }}" style="width:100%;margin-top:14px;padding:17px;border-radius:999px;background:var(--color-accent);color:#fdf6ea;font:400 18px/1 var(--font-heading);text-align:center;box-shadow:var(--shadow-md)">{{ tNewRecord }}</button>
+
+      <div style="margin-top:22px;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="min-width:0">
+            <div class="mv-kicker">{{ tWeather }}</div>
+            <div style="font:400 18px/1.2 var(--font-heading);margin-top:7px">{{ wxHeadline }}</div>
+            <div style="font-size:12px;line-height:1.55;color:var(--color-neutral-700);margin-top:6px">{{ wxSub }}</div>
+          </div>
+          <button class="mv-tap" onClick="{{ refreshWeather }}" style="flex:none;padding:8px 12px;border-radius:999px;background:var(--color-neutral-200);font:600 11px/1 var(--font-body);white-space:nowrap">{{ tRefresh }}</button>
+        </div>
+        <sc-if value="{{ hasForecast }}">
+          <div class="mv-row" style="margin-top:14px">
+            <sc-for list="{{ forecastDays }}" as="w" hint-placeholder-count="5">
+              <div style="flex:none;width:62px;padding:10px 6px;border-radius:var(--radius-md);background:{{ w.bg }};text-align:center">
+                <div style="font:600 10px/1 var(--font-body);color:var(--color-neutral-600)">{{ w.day }}</div>
+                <div style="font:400 15px/1 var(--font-heading);margin-top:7px">{{ w.mm }}</div>
+                <div style="font-size:10.5px;color:var(--color-neutral-700);margin-top:6px">{{ w.temp }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px">
+        <h3 style="font-size:18px;margin:0">{{ tFruitingNow }}</h3>
+        <span style="font:600 11px/1 var(--font-body);color:var(--color-neutral-600)">{{ fruitingBasis }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ fruitingNow }}" as="f" hint-placeholder-count="4">
+          <button class="mv-tap" onClick="{{ f.open }}" style="width:100%;display:flex;gap:12px;align-items:center;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:11px 13px;box-shadow:var(--shadow-sm);text-align:left">
+            <span style="width:38px;height:38px;flex:none;border-radius:12px;background:{{ f.swatch }}"></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:600 13.5px/1.2 var(--font-body)">{{ f.common }}</span>
+              <span style="display:block;font-size:11px;font-style:italic;color:var(--color-neutral-600);margin-top:3px">{{ f.latin }}</span>
+            </span>
+            <span style="flex:none;font:400 17px/1 var(--font-heading);color:var(--color-accent-700)">{{ f.pct }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ noFruiting }}">
+        <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);font-size:13px;line-height:1.6;color:var(--color-neutral-700)">{{ tNoFruiting }}</div>
+      </sc-if>
+
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px">
+        <h3 style="font-size:18px;margin:0">{{ tLatest }}</h3>
+        <button class="mv-tap" onClick="{{ goRecords }}" style="font:600 12px/1 var(--font-body);color:var(--color-accent-700)">{{ tAll }}</button>
+      </div>
+      <sc-if value="{{ hasRecords }}">
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ recentRecords }}" as="r" hint-placeholder-count="3">
+            <button class="mv-tap" onClick="{{ r.open }}" style="width:100%;display:flex;gap:12px;align-items:center;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:11px 13px;box-shadow:var(--shadow-sm);text-align:left">
+              <span style="width:48px;height:48px;flex:none;border-radius:15px;background-color:var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ r.thumb }}"></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:600 14px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span>
+                <span style="display:block;font-size:11.5px;color:var(--color-neutral-600);margin-top:4px">{{ r.meta }}</span>
+              </span>
+              <span style="flex:none;font:600 16px/1 var(--font-body);color:var(--color-neutral-500)">›</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ noRecords }}">
+        <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-sm);font-size:13.5px;line-height:1.6;color:var(--color-neutral-700)">{{ tEmptyHome }}</div>
+      </sc-if>
+
+      <button class="mv-tap" onClick="{{ goSettings }}" style="width:100%;margin-top:18px;padding:14px 16px;border-radius:var(--radius-lg);background:var(--color-neutral-200);display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span style="min-width:0">
+          <span style="display:block;font:600 13px/1.2 var(--font-body)">{{ observerLine }}</span>
+          <span style="display:block;font-size:11.5px;color:var(--color-neutral-600);margin-top:4px">{{ storageLine }}</span>
+        </span>
+        <span style="flex:none;font:600 16px/1 var(--font-body);color:var(--color-neutral-600)">›</span>
+      </button>
+    </div>
+  </sc-if>
+
+  <!-- MAP -->
+  <sc-if value="{{ isMap }}">
+    <div style="flex:1;position:relative;min-height:0">
+      <div id="mv-map" ref="{{ mapRef }}" style="position:absolute;inset:0"></div>
+
+      <div style="position:absolute;left:14px;right:14px;top:8px;z-index:500">
+        <select onChange="{{ onPredSelect }}" value="{{ predValue }}" style="width:100%;box-sizing:border-box;padding:13px 15px;border-radius:999px;border:1px solid var(--color-divider);background:rgba(253,246,234,.97);box-shadow:var(--shadow-md);font:600 13px var(--font-body);color:var(--color-text)">
+          <sc-for list="{{ predOptions }}" as="p" hint-placeholder-count="5">
+            <option value="{{ p.value }}">{{ p.label }}</option>
+          </sc-for>
+        </select>
+      </div>
+
+      <sc-if value="{{ predOn }}">
+        <div style="position:absolute;left:14px;right:14px;bottom:168px;z-index:500;background:rgba(253,246,234,.97);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow-lg)">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+            <div style="min-width:0">
+              <div class="mv-kicker">{{ tChance }}</div>
+              <div style="font:400 17px/1.2 var(--font-heading);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ predTitle }}</div>
+            </div>
+            <div style="flex:none;font:400 22px/1 var(--font-heading);color:var(--color-accent-700)">{{ predPeak }}</div>
+          </div>
+          <input type="range" min="1" max="12" step="1" value="{{ predMonth }}" onInput="{{ onPredMonth }}" style="width:100%;margin:12px 0 2px;accent-color:var(--color-accent)">
+          <div style="display:flex;justify-content:space-between;font:600 10px/1 var(--font-body);color:var(--color-neutral-600)">
+            <span>{{ tMonthFirst }}</span><span>{{ predMonthLabel }}</span><span>{{ tMonthLast }}</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <sc-for list="{{ moistOptions }}" as="m" hint-placeholder-count="3">
+              <button class="mv-tap" onClick="{{ m.pick }}" style="flex:1;text-align:center;padding:9px 6px;border-radius:999px;font:600 11.5px/1.2 var(--font-body);background:{{ m.bg }};color:{{ m.fg }}">{{ m.label }}</button>
+            </sc-for>
+          </div>
+          <div style="font-size:11.5px;line-height:1.55;color:var(--color-neutral-700);margin-top:11px">{{ predNote }}</div>
+        </div>
+      </sc-if>
+
+      <div style="position:absolute;left:14px;right:14px;bottom:104px;display:flex;gap:9px;z-index:500">
+        <button class="mv-tap" onClick="{{ centerMe }}" style="flex:1;padding:13px;border-radius:999px;background:rgba(253,246,234,.96);box-shadow:var(--shadow-md);font:400 15px/1 var(--font-heading);text-align:center">{{ tMyPosition }}</button>
+        <button class="mv-tap" onClick="{{ startDraft }}" style="flex:1;padding:13px;border-radius:999px;background:var(--color-accent);color:#fdf6ea;box-shadow:var(--shadow-md);font:400 15px/1 var(--font-heading);text-align:center">{{ tRecordHere }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- CAPTURE -->
+  <sc-if value="{{ isNew }}">
+    <div class="mv-scroll" style="padding:8px 20px 112px">
+      <div style="border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md);position:relative;height:250px;background-color:#4a4034;background-size:cover;background-position:center;background-image:{{ draftHero }}">
+        <sc-if value="{{ draftNoPhoto }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:rgba(253,246,234,.9)">
+            <div style="width:112px;height:112px;border:2.75px dashed rgba(253,246,234,.5);border-radius:50%"></div>
+            <div style="font:600 11.5px/1 var(--font-body)">{{ tPhotoAngles }}</div>
+          </div>
+        </sc-if>
+      </div>
+      <div class="mv-row" style="margin-top:10px">
+        <sc-for list="{{ draftThumbs }}" as="t" hint-placeholder-count="1">
+          <button class="mv-tap" onClick="{{ t.remove }}" style="width:56px;height:56px;flex:none;border-radius:16px;border:2px solid var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ t.thumb }}"></button>
+        </sc-for>
+        <label style="width:56px;height:56px;flex:none;border-radius:16px;background:var(--color-accent);color:#fdf6ea;display:flex;align-items:center;justify-content:center;cursor:pointer;font:400 26px/1 var(--font-heading)">
+          +<input type="file" accept="image/*" capture="environment" multiple="{{ true }}" onChange="{{ onPhoto }}" style="display:none">
+        </label>
+      </div>
+      <div style="font-size:11.5px;color:var(--color-neutral-600);margin-top:8px">{{ photoHint }}</div>
+
+      <div style="margin-top:16px;background:{{ fixBg }};border-radius:var(--radius-lg);padding:14px 16px;display:flex;gap:13px;align-items:center">
+        <span style="width:44px;height:44px;flex:none;border-radius:var(--radius-md);background:{{ fixDotBg }}"></span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font:400 15px/1.2 var(--font-heading)">{{ fixCoords }}</span>
+          <span style="display:block;font-size:12px;color:{{ fixFg }};margin-top:5px">{{ fixMeta }}</span>
+        </span>
+        <button class="mv-tap" onClick="{{ toggleGps }}" style="flex:none;padding:9px 12px;border-radius:999px;background:#fdf6ea;font:600 11.5px/1 var(--font-body);color:var(--color-accent-2-700);white-space:nowrap">{{ fixBtn }}</button>
+      </div>
+
+      <div class="mv-kicker" style="margin:20px 0 9px">{{ tSpeciesLabel }}</div>
+      <input class="mv-input" value="{{ speciesQuery }}" onInput="{{ onSpeciesQuery }}" placeholder="{{ tSearchSpecies }}" style="margin-bottom:9px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ speciesOptions }}" as="s" hint-placeholder-count="4">
+          <button class="mv-tap" onClick="{{ s.pick }}" style="width:100%;display:flex;gap:12px;align-items:center;text-align:left;padding:12px 13px;border-radius:var(--radius-md);box-shadow:var(--shadow-sm);background:{{ s.bg }};border:2px solid {{ s.border }}">
+            <span style="width:38px;height:38px;flex:none;border-radius:12px;background:{{ s.swatch }}"></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:600 13.5px/1.2 var(--font-body)">{{ s.common }}</span>
+              <span style="display:block;font-size:11.5px;font-style:italic;color:var(--color-neutral-600);margin-top:3px">{{ s.latin }}</span>
+            </span>
+            <span style="flex:none;padding:4px 9px;border-radius:999px;background:{{ s.tagBg }};color:{{ s.tagFg }};font:600 10.5px/1.3 var(--font-body)">{{ s.tag }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ noSpeciesMatch }}">
+        <div style="font-size:12.5px;line-height:1.6;color:var(--color-neutral-700);padding:4px 2px">{{ tNoSpeciesMatch }}</div>
+      </sc-if>
+
+      <div class="mv-kicker" style="margin:20px 0 9px">{{ tConfidence }}</div>
+      <div style="display:flex;gap:7px">
+        <sc-for list="{{ confidenceOptions }}" as="c" hint-placeholder-count="3">
+          <button class="mv-tap" onClick="{{ c.pick }}" style="flex:1;text-align:center;padding:11px 6px;border-radius:var(--radius-md);font:600 12.5px/1.2 var(--font-body);background:{{ c.bg }};color:{{ c.fg }}">{{ c.label }}</button>
+        </sc-for>
+      </div>
+
+      <div class="mv-kicker" style="margin:20px 0 9px">{{ tSubstrate }}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        <sc-for list="{{ substrateOptions }}" as="s" hint-placeholder-count="6">
+          <button class="mv-tap" onClick="{{ s.toggle }}" style="padding:9px 13px;border-radius:999px;font:600 12.5px/1 var(--font-body);background:{{ s.bg }};color:{{ s.fg }};box-shadow:var(--shadow-sm)">{{ s.label }}</button>
+        </sc-for>
+      </div>
+
+      <div class="mv-kicker" style="margin:20px 0 9px">{{ tHostHabitat }}</div>
+      <div style="display:flex;gap:9px">
+        <select onChange="{{ onHost }}" value="{{ draftHost }}" style="flex:1;min-width:0;padding:13px;border-radius:var(--radius-md);border:1px solid var(--color-divider);background:var(--color-neutral-100);font:400 14px var(--font-body);color:var(--color-text)">
+          <sc-for list="{{ hostOptions }}" as="h" hint-placeholder-count="4">
+            <option value="{{ h }}">{{ h }}</option>
+          </sc-for>
+        </select>
+        <select onChange="{{ onHabitat }}" value="{{ draftHabitat }}" style="flex:1;min-width:0;padding:13px;border-radius:var(--radius-md);border:1px solid var(--color-divider);background:var(--color-neutral-100);font:400 14px var(--font-body);color:var(--color-text)">
+          <sc-for list="{{ habitatOptions }}" as="h" hint-placeholder-count="4">
+            <option value="{{ h }}">{{ h }}</option>
+          </sc-for>
+        </select>
+      </div>
+
+      <div class="mv-kicker" style="margin:20px 0 9px">{{ tCount }}</div>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:12px 16px;box-shadow:var(--shadow-sm)">
+        <button class="mv-tap" onClick="{{ decCount }}" style="width:44px;height:44px;flex:none;border-radius:999px;background:var(--color-neutral-200);font:400 22px/1 var(--font-heading);display:flex;align-items:center;justify-content:center">–</button>
+        <div style="flex:1;text-align:center">
+          <div style="font:400 26px/1 var(--font-heading);font-variant-numeric:tabular-nums">{{ draftCount }}</div>
+          <div style="font-size:11.5px;color:var(--color-neutral-600);margin-top:5px">{{ tFruitbodies }}</div>
+        </div>
+        <button class="mv-tap" onClick="{{ incCount }}" style="width:44px;height:44px;flex:none;border-radius:999px;background:var(--color-accent);color:#fdf6ea;font:400 22px/1 var(--font-heading);display:flex;align-items:center;justify-content:center">+</button>
+      </div>
+
+      <div class="mv-kicker" style="margin:20px 0 9px">{{ tNotes }}</div>
+      <textarea onInput="{{ onNotes }}" value="{{ draftNotes }}" placeholder="{{ tNotesPlaceholder }}" style="width:100%;box-sizing:border-box;min-height:92px;padding:13px;border-radius:var(--radius-md);border:1px solid var(--color-divider);background:var(--color-neutral-100);font:400 14px/1.5 var(--font-body);color:var(--color-text);resize:vertical"></textarea>
+
+      <div style="display:flex;gap:9px;margin-top:16px">
+        <button class="mv-tap" onClick="{{ cancelDraft }}" style="flex:1;padding:15px;border-radius:999px;background:var(--color-neutral-200);font:400 15px/1 var(--font-heading);text-align:center">{{ tDiscard }}</button>
+        <button class="mv-tap" onClick="{{ saveDraft }}" style="flex:2;padding:15px;border-radius:999px;background:{{ saveBg }};color:{{ saveFg }};font:400 16px/1 var(--font-heading);text-align:center;box-shadow:var(--shadow-md)">{{ saveLabel }}</button>
+      </div>
+      <div style="font-size:11.5px;line-height:1.55;color:var(--color-neutral-600);margin-top:10px">{{ saveHint }}</div>
+    </div>
+  </sc-if>
+
+  <!-- LIST -->
+  <sc-if value="{{ isRecords }}">
+    <div class="mv-scroll" style="padding:8px 20px 112px">
+      <div style="display:flex;gap:6px;padding:4px;border-radius:999px;background:var(--color-neutral-200);margin-bottom:12px">
+        <sc-for list="{{ listTabs }}" as="l" hint-placeholder-count="2">
+          <button class="mv-tap" onClick="{{ l.pick }}" style="flex:1;text-align:center;padding:10px 6px;border-radius:999px;font:600 12.5px/1.2 var(--font-body);background:{{ l.bg }};color:{{ l.fg }}">{{ l.label }}</button>
+        </sc-for>
+      </div>
+      <input class="mv-input" value="{{ query }}" onInput="{{ onQuery }}" placeholder="{{ tSearchRecords }}">
+      <div class="mv-row" style="margin:10px 0 14px">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+          <button class="mv-tap" onClick="{{ f.pick }}" style="flex:none;padding:9px 13px;border-radius:999px;font:600 12px/1 var(--font-body);background:{{ f.bg }};color:{{ f.fg }}">{{ f.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ filteredRecords }}" as="r" hint-placeholder-count="3">
+          <button class="mv-tap" onClick="{{ r.open }}" style="width:100%;text-align:left;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:12px;box-shadow:var(--shadow-sm)">
+            <span style="display:flex;gap:12px;align-items:center">
+              <span style="width:56px;height:56px;flex:none;border-radius:17px;background-color:var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ r.thumb }}"></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:400 16px/1.15 var(--font-heading)">{{ r.title }}</span>
+                <span style="display:block;font-size:11.5px;color:var(--color-neutral-600);margin-top:4px">{{ r.meta }}</span>
+                <span style="display:block;font-size:11.5px;color:var(--color-neutral-600);margin-top:3px">{{ r.where }}</span>
+              </span>
+              <span style="flex:none;font:600 16px/1 var(--font-body);color:var(--color-neutral-500)">›</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ noFiltered }}">
+        <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-sm);font-size:13.5px;line-height:1.6;color:var(--color-neutral-700)">{{ emptyListLine }}</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- DETAIL -->
+  <sc-if value="{{ isDetail }}">
+    <div class="mv-scroll" style="padding:8px 20px 112px">
+      <button class="mv-tap" onClick="{{ goRecords }}" style="padding:9px 13px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body);margin-bottom:14px">{{ tBackToList }}</button>
+      <div style="height:250px;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);background-color:var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ detailHero }}"></div>
+      <div class="mv-row" style="margin-top:10px">
+        <sc-for list="{{ detailThumbs }}" as="t" hint-placeholder-count="2">
+          <span style="width:56px;height:56px;flex:none;border-radius:16px;background-color:var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ t.thumb }}"></span>
+        </sc-for>
+      </div>
+      <h3 style="font-size:24px;margin:18px 0 4px">{{ detailCommon }}</h3>
+      <div style="font-size:13.5px;font-style:italic;color:var(--color-neutral-600)">{{ detailLatin }}</div>
+      <div style="display:flex;flex-direction:column;gap:1px;margin-top:16px;border-radius:var(--radius-lg);overflow:hidden;background:var(--color-divider)">
+        <sc-for list="{{ detailRows }}" as="row" hint-placeholder-count="7">
+          <div style="display:flex;gap:12px;padding:12px 14px;background:var(--color-neutral-100)">
+            <span style="flex:none;width:120px;font:600 11.5px/1.4 var(--font-body);color:var(--color-neutral-600)">{{ row.k }}</span>
+            <span style="flex:1;min-width:0;font-size:12.5px;line-height:1.5">{{ row.v }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:16px">
+        <button class="mv-tap" onClick="{{ editRecord }}" style="flex:2;padding:15px;border-radius:999px;background:var(--color-accent);color:#fdf6ea;font:400 15px/1 var(--font-heading);text-align:center;box-shadow:var(--shadow-md)">{{ tComplete }}</button>
+        <button class="mv-tap" onClick="{{ deleteRecord }}" style="flex:1;padding:15px;border-radius:999px;background:var(--color-neutral-200);font:400 15px/1 var(--font-heading);text-align:center">{{ deleteLabel }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- SPECIES -->
+  <sc-if value="{{ isSpecies }}">
+    <div class="mv-scroll" style="padding:8px 20px 112px">
+      <sc-if value="{{ speciesOpen }}">
+        <button class="mv-tap" onClick="{{ closeSpecies }}" style="padding:9px 13px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body);margin-bottom:14px">{{ tBackToSpecies }}</button>
+        <div style="height:180px;border-radius:var(--radius-lg);background:{{ openSwatch }}"></div>
+        <h3 style="font-size:25px;margin:16px 0 4px">{{ openCommon }}</h3>
+        <div style="font-size:13.5px;font-style:italic;color:var(--color-neutral-600)">{{ openLatin }}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+          <span style="padding:5px 11px;border-radius:999px;background:{{ openTagBg }};color:{{ openTagFg }};font:600 11.5px/1.3 var(--font-body)">{{ openTag }}</span>
+          <span style="padding:5px 11px;border-radius:999px;background:var(--color-neutral-200);color:var(--color-neutral-800);font:600 11.5px/1.3 var(--font-body)">{{ openSeason }}</span>
+          <span style="padding:5px 11px;border-radius:999px;background:var(--color-accent-2-100);color:var(--color-accent-2-800);font:600 11.5px/1.3 var(--font-body)">{{ openRegions }}</span>
+          <span style="padding:5px 11px;border-radius:999px;background:var(--color-neutral-200);color:var(--color-neutral-800);font:600 11.5px/1.3 var(--font-body)">{{ openMine }}</span>
+        </div>
+        <sc-for list="{{ openSections }}" as="s" hint-placeholder-count="3">
+          <div style="margin-top:20px">
+            <h4 style="font-size:16px;margin:0 0 7px">{{ s.title }}</h4>
+            <p style="margin:0;font-size:13.5px;line-height:1.7;color:var(--color-neutral-700);text-wrap:pretty">{{ s.text }}</p>
+          </div>
+        </sc-for>
+        <div style="margin-top:20px;background:var(--color-accent-100);border-radius:var(--radius-lg);padding:14px 16px;font-size:12.5px;line-height:1.6;color:var(--color-accent-800)">{{ tIdWarning }}</div>
+        <button class="mv-tap" onClick="{{ startDraftHere }}" style="width:100%;margin-top:16px;padding:15px;border-radius:999px;background:var(--color-accent);color:#fdf6ea;font:400 16px/1 var(--font-heading);text-align:center">{{ tRecordThisSpecies }}</button>
+      </sc-if>
+      <sc-if value="{{ speciesClosed }}">
+        <div style="display:flex;gap:6px;padding:4px;border-radius:999px;background:var(--color-neutral-200);margin-bottom:12px">
+          <sc-for list="{{ listTabs }}" as="l" hint-placeholder-count="2">
+            <button class="mv-tap" onClick="{{ l.pick }}" style="flex:1;text-align:center;padding:10px 6px;border-radius:999px;font:600 12.5px/1.2 var(--font-body);background:{{ l.bg }};color:{{ l.fg }}">{{ l.label }}</button>
+          </sc-for>
+        </div>
+        <div class="mv-row" style="margin-bottom:14px">
+          <sc-for list="{{ regionChips }}" as="c" hint-placeholder-count="4">
+            <button class="mv-tap" onClick="{{ c.pick }}" style="flex:none;padding:9px 13px;border-radius:999px;font:600 12px/1 var(--font-body);background:{{ c.bg }};color:{{ c.fg }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+          <sc-for list="{{ speciesCards }}" as="s" hint-placeholder-count="4">
+            <button class="mv-tap" onClick="{{ s.open }}" style="text-align:left;background:var(--color-neutral-100);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden">
+              <span style="display:flex;height:96px;align-items:flex-start;justify-content:flex-end;padding:8px;background:{{ s.swatch }}">
+                <span style="padding:4px 8px;border-radius:999px;background:{{ s.tagBg }};color:{{ s.tagFg }};font:600 10px/1.3 var(--font-body)">{{ s.tag }}</span>
+              </span>
+              <span style="display:block;padding:11px 12px 13px">
+                <span style="display:block;font:400 14.5px/1.15 var(--font-heading)">{{ s.common }}</span>
+                <span style="display:block;font-size:10.5px;font-style:italic;color:var(--color-neutral-600);margin-top:4px">{{ s.latin }}</span>
+                <span style="display:block;font-size:11px;color:var(--color-neutral-700);margin-top:8px">{{ s.season }} · {{ s.mine }}</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- MANAGE -->
+  <sc-if value="{{ isSettings }}">
+    <div class="mv-scroll" style="padding:8px 20px 112px">
+      <button class="mv-tap" onClick="{{ goHome }}" style="padding:9px 13px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body);margin-bottom:16px">{{ tBack }}</button>
+
+      <div class="mv-kicker" style="margin:0 0 9px">{{ tLanguage }}</div>
+      <div style="display:flex;gap:6px;padding:4px;border-radius:999px;background:var(--color-neutral-200)">
+        <sc-for list="{{ langOptions }}" as="l" hint-placeholder-count="2">
+          <button class="mv-tap" onClick="{{ l.pick }}" style="flex:1;text-align:center;padding:10px 6px;border-radius:999px;font:600 12.5px/1.2 var(--font-body);background:{{ l.bg }};color:{{ l.fg }}">{{ l.label }}</button>
+        </sc-for>
+      </div>
+
+      <div class="mv-kicker" style="margin:22px 0 9px">{{ tObserver }}</div>
+      <input class="mv-input" value="{{ observer }}" onInput="{{ onObserver }}" placeholder="{{ tObserverPlaceholder }}">
+      <div class="mv-kicker" style="margin:18px 0 9px">{{ tProject }}</div>
+      <input class="mv-input" value="{{ project }}" onInput="{{ onProject }}" placeholder="{{ tProjectPlaceholder }}">
+      <div style="font-size:11.5px;line-height:1.55;color:var(--color-neutral-600);margin-top:9px">{{ tObserverNote }}</div>
+
+      <sc-if value="{{ hasProjects }}">
+        <div class="mv-kicker" style="margin:24px 0 9px">{{ tProjectsOnDevice }}</div>
+        <div style="display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-lg);overflow:hidden;background:var(--color-divider)">
+          <sc-for list="{{ projectRows }}" as="p" hint-placeholder-count="2">
+            <button class="mv-tap" onClick="{{ p.open }}" style="width:100%;display:flex;gap:12px;align-items:center;padding:13px 15px;background:var(--color-neutral-100);text-align:left">
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:600 13px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</span>
+                <span style="display:block;font-size:11.5px;color:var(--color-neutral-600);margin-top:4px">{{ p.meta }}</span>
+              </span>
+              <span style="flex:none;padding:5px 10px;border-radius:999px;background:var(--color-accent-100);color:var(--color-accent-800);font:600 11px/1.3 var(--font-body)">{{ p.count }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div class="mv-kicker" style="margin:24px 0 9px">{{ tStorage }}</div>
+      <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm)">
+        <div style="font:400 17px/1.2 var(--font-heading)">{{ storageHeadline }}</div>
+        <div style="font-size:12.5px;line-height:1.6;color:var(--color-neutral-700);margin-top:7px">{{ storageDetail }}</div>
+        <div style="height:8px;border-radius:999px;background:var(--color-neutral-300);margin-top:14px;overflow:hidden">
+          <div style="height:100%;border-radius:999px;background:var(--color-accent);width:{{ storagePct }}"></div>
+        </div>
+      </div>
+
+      <div class="mv-kicker" style="margin:24px 0 9px">{{ tExport }}</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <button class="mv-tap" onClick="{{ exportCsv }}" style="width:100%;padding:14px;border-radius:999px;background:var(--color-neutral-200);font:400 15px/1 var(--font-heading);text-align:center">{{ tExportCsv }}</button>
+        <button class="mv-tap" onClick="{{ exportJson }}" style="width:100%;padding:14px;border-radius:999px;background:var(--color-neutral-200);font:400 15px/1 var(--font-heading);text-align:center">{{ tExportGeo }}</button>
+        <button class="mv-tap" onClick="{{ exportBundle }}" style="width:100%;padding:14px;border-radius:999px;background:var(--color-accent-2-200);color:var(--color-accent-2-800);font:400 15px/1 var(--font-heading);text-align:center">{{ tExportBackup }}</button>
+      </div>
+
+      <div class="mv-kicker" style="margin:24px 0 9px">{{ tImport }}</div>
+      <label style="display:block;width:100%;box-sizing:border-box;padding:14px;border-radius:999px;background:var(--color-accent);color:#fdf6ea;font:400 15px/1 var(--font-heading);text-align:center;cursor:pointer;box-shadow:var(--shadow-md)">
+        {{ tImportButton }}
+        <input type="file" accept=".json,.geojson,application/json" onChange="{{ onImport }}" style="display:none">
+      </label>
+      <div style="font-size:11.5px;line-height:1.55;color:var(--color-neutral-600);margin-top:10px">{{ tImportNote }}</div>
+
+      <div class="mv-kicker" style="margin:24px 0 9px">{{ tDanger }}</div>
+      <button class="mv-tap" onClick="{{ wipeAll }}" style="width:100%;padding:14px;border-radius:999px;background:var(--color-accent-100);color:var(--color-accent-800);font:400 15px/1 var(--font-heading);text-align:center">{{ wipeLabel }}</button>
+      <div style="font-size:11.5px;line-height:1.55;color:var(--color-neutral-600);margin-top:10px">{{ tDangerNote }}</div>
+    </div>
+  </sc-if>
+
+  <!-- TABBAR -->
+  <div style="position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:999px;background:rgba(253,246,234,.96);box-shadow:var(--shadow-lg);display:flex;align-items:center;padding:0 8px;z-index:1000">
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+      <button class="mv-tap" onClick="{{ t.go }}" style="flex:1;height:50px;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:{{ t.bg }}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ t.fg }}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="{{ t.icon }}"></path>
+        </svg>
+        <span style="font:600 9.5px/1 var(--font-body);color:{{ t.fg }}">{{ t.label }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ toast }}">
+    <div style="position:absolute;left:20px;right:20px;bottom:92px;padding:13px 16px;border-radius:var(--radius-lg);background:var(--color-neutral-900);color:#fdf6ea;font:600 12.5px/1.4 var(--font-body);box-shadow:var(--shadow-lg);z-index:1200">{{ toast }}</div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:520,&quot;height&quot;:900},&quot;language&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;English&quot;,&quot;Nederlands&quot;],&quot;default&quot;:&quot;English&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Locale&quot;},&quot;mapStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;street&quot;,&quot;terrain&quot;,&quot;satellite&quot;],&quot;default&quot;:&quot;street&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Map&quot;},&quot;photoSize&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1600,&quot;min&quot;:600,&quot;max&quot;:2000,&quot;step&quot;:100,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Storage&quot;},&quot;showLatin&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;}}">
+const DB='mycota', STORE='records', META='meta';
+const ACC='var(--color-accent)',ACC1='var(--color-accent-100)',ACC2='var(--color-accent-200)',ACC3='var(--color-accent-300)',ACC7='var(--color-accent-700)',ACC8='var(--color-accent-800)',N1='var(--color-neutral-100)',N2='var(--color-neutral-200)',N6='var(--color-neutral-600)',N8='var(--color-neutral-800)',S1='var(--color-accent-2-100)',S2='var(--color-accent-2-200)',S7='var(--color-accent-2-700)',S8='var(--color-accent-2-800)',CREAM='#fdf6ea';
+
+function openDb(){
+  return new Promise((res,rej)=>{
+    const q=indexedDB.open(DB,1);
+    q.onupgradeneeded=()=>{const db=q.result;
+      if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE,{keyPath:'id'});
+      if(!db.objectStoreNames.contains(META)) db.createObjectStore(META,{keyPath:'k'});};
+    q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);
+  });
+}
+async function all(store){ const db=await openDb(); return new Promise((res,rej)=>{const r=db.transaction(store).objectStore(store).getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error);}); }
+async function put(store,val){ const db=await openDb(); return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite'); t.objectStore(store).put(val); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error);}); }
+async function del(store,key){ const db=await openDb(); return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite'); t.objectStore(store).delete(key); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error);}); }
+async function clearStore(store){ const db=await openDb(); return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite'); t.objectStore(store).clear(); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error);}); }
+
+const T={
+  en:{loc:'en-GB',records:'records',today:'today',species:'species',unsure:'unsure',newRecord:'Record a new find',latest:'Latest finds',all:'All',
+    emptyHome:'Nothing recorded yet. Turn on GPS, photograph the find, and the observation sits on this device within half a minute — with or without signal.',
+    setObserver:'Set observer and project',nothingStored:'Nothing stored yet',
+    gpsOff:'GPS off',gpsSearch:'searching…',gpsDenied:'Location denied',gpsNone:'No location on this device',noFix:'No fix',searchingSats:'Searching satellites…',accLive:'Accuracy ±{a} m · live',turnOn:'Turn on',again:'Again',
+    myPosition:'My position',recordHere:'Record here',onlyFinds:'My finds only',chance:'chance of fruiting',chancePrefix:'Chance',dry:'Dry',normal:'Normal',wet:'Wet',
+    predNoSites:'No finds with a location yet — the chance layer draws as soon as there are places on the map.',
+    photoAngles:'cap from above · gills · stem base',photoHintNone:'Take at least one photo — cap, gills and stem base give the best identification.',
+    photoHintSome:'Tap a photo to remove it · {n} of 3',maxPhotos:'Three photos per find is the maximum.',
+    speciesLabel:'Species',searchSpecies:'Search common or scientific name',
+    noSpeciesMatch:'No species in the list. Pick a related one and write the doubt into the field note — identification can be completed on the desktop.',
+    confidence:'Confidence',conf:['Unsure','Probable','Certain'],substrate:'Substrate',hostHabitat:'Host tree & habitat',count:'Abundance',fruitbodies:'fruit bodies',
+    notes:'Field notes',notesPlaceholder:'Growth habit, smell, colour change on bruising…',discard:'Discard',save:'Save on this device',saveEdit:'Save addition',needPhoto:'Take a photo first',
+    saveHintFix:'Saved with your current position — nothing goes to a server.',saveHintNoFix:'Without a fix the observation is stored without coordinates; you can complete it later.',
+    savedToast:'Observation saved on this device.',savedEditToast:'Addition saved.',photoFirst:'Take a photo first.',
+    searchRecords:'Search observations',filters:['All','Today','Unsure','With location'],emptyFilter:'No observation matches this filter.',emptyList:'No observations on this device yet.',
+    listTabs:['Observations','Species'],backToList:'Back to the list',backToSpecies:'Back to the species list',
+    date:'Date',confidenceRow:'Confidence',countRow:'Abundance',coords:'Coordinates',substrateRow:'Substrate',host:'Host tree',habitat:'Habitat',observerRow:'Observer',notesRow:'Field note',
+    notRecorded:'not recorded',notFilled:'not filled in',complete:'Complete',del:'Delete',sure:'Sure?',deleted:'Observation deleted.',
+    sDesc:'Description',sEco:'Ecology',sRisk:'Risk & confusion',ownFinds:'{n} own finds',recordThis:'Record a find of this species',
+    idWarning:'A reference profile, not a determination. Never eat a find on an app identification alone — check with a local key or an expert.',
+    regions:{all:'Worldwide',eu:'Europe',na:'North America',sa:'South America',af:'Africa',as:'Asia',oc:'Oceania'},
+    back:'Back',language:'Language',observer:'Observer',observerPh:'Name or initials',project:'Project',projectPh:'e.g. Ridge survey 2026',
+    observerNote:'Observer and project are written into every new observation and travel with the export.',
+    projectsOnDevice:'Projects on this device',noProject:'No project',projMeta:'{s} species · latest {d}',
+    storage:'Storage',storageDetail:'Photos are resized to {p} px for storage in this device\u2019s database. Nothing goes to a server.',
+    export:'Export',exportCsv:'Darwin Core CSV',exportGeo:'GeoJSON for QGIS',exportBackup:'Full backup with photos',
+    import:'Import',importButton:'Read a backup or GeoJSON',
+    importNote:'Observations are merged with what is already here; the same observation is never added twice. Useful for merging field devices or restoring a backup.',
+    danger:'Danger zone',wipe:'Delete all observations',wipeSure:'Delete everything — sure?',wiped:'Everything deleted.',
+    dangerNote:'Everything lives on this device and nowhere else. Export before you wipe.',
+    nothingToExport:'Nothing to export.',csvDone:'CSV downloaded — ready for the survey.',geoDone:'GeoJSON downloaded.',backupDone:'Backup with photos downloaded.',
+    unreadable:'File could not be read.',noRecordsIn:'No observations in this file.',imported:'{n} observations imported.',nothingNew:'Everything was already here — nothing added.',
+    storageFull:'Save failed — disk full?',noStorage:'Storage is not available in this browser.',migrated:'{n} older observations migrated.',
+    mapStyles:{street:'Street',terrain:'Terrain',satellite:'Satellite'},
+    tabs:['Today','Map','Find','List','Manage'],kickerHome:'Mycota · stored on this device',kickerMap:'Map',kickerNew:'New observation',kickerEdit:'Complete observation',
+    kickerList:'Observations on this device',kickerSpecies:'Species reference',kickerDetail:'Observation',kickerSettings:'Project management',
+    titleHome:'Today',titleMap:'Finds in the field',titleNew:'Record',titleSpecies:'Species',titleDetail:'Observation',titleSettings:'Manage',
+    obsOne:'observation',obsMany:'observations',one:'',pcs:'×',noLoc:'no location',
+    subs:['Soil / litter','Moss','Dead wood','Living trunk','Stump','Dung','Burnt ground'],
+    hosts:['Betula · birch','Pinus · pine','Picea · spruce','Quercus · oak','Fagus · beech','Populus / Salix · poplar, willow','Eucalyptus','Palm','Other / unknown'],
+    habs:['Broadleaf forest','Conifer forest','Mixed forest','Grassland / pasture','Heath / moor','Roadside / verge','Park / garden','Plantation','Tropical rainforest'],
+    months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    monthsFull:['January','February','March','April','May','June','July','August','September','October','November','December'],
+    yearRound:'year-round',
+    tags:{deadly:'Deadly',toxic:'Toxic',caution:'Caution',edible:'Edible',inedible:'Inedible',restricted:'Restricted'},
+    predNote:'1 km hexagon grid scored from phenology ({s}), soil moisture and {b}; cells near places with the same host tree or habitat score too. Darker = higher chance.',
+    hexZoom:'Zoom in to draw the 1 km grid.',
+    weather:'Weather & soil moisture',refresh:'Refresh',rain7:'{mm} mm rain in the past week',
+    wxNoPos:'No position yet — turn on GPS for a local forecast.',wxLoading:'Fetching forecast…',
+    wxOffline:'No connection — showing the last forecast from {d}.',wxNever:'No forecast stored yet. Connect once and it stays available offline.',
+    wxVerdict:{0:'Dry week — fruiting held back.',1:'Normal moisture — average fruiting.',2:'Wet week — good fruiting conditions.'},
+    fruitingNow:'Fruiting now',noFruiting:'Nothing in season at this moisture level. Change the month on the map to look ahead.',
+    fruitingBasis:'{m} · {v}',
+    predBasisOwn:'{n} own finds of this species',predBasisNone:'no own finds of this species yet'},
+  nl:{loc:'nl-NL',records:'vondsten',today:'vandaag',species:'soorten',unsure:'niet zeker',newRecord:'Nieuwe vondst vastleggen',latest:'Laatste vondsten',all:'Alles',
+    emptyHome:'Nog niets vastgelegd. Zet GPS aan, maak een foto van de vondst en de waarneming staat binnen een halve minuut op dit toestel — ook zonder bereik.',
+    setObserver:'Waarnemer en project instellen',nothingStored:'Nog niets opgeslagen',
+    gpsOff:'GPS uit',gpsSearch:'zoekt…',gpsDenied:'Locatie geweigerd',gpsNone:'Dit toestel geeft geen locatie',noFix:'Geen fix',searchingSats:'Zoekt satellieten…',accLive:'Nauwkeurigheid ±{a} m · live',turnOn:'Aanzetten',again:'Opnieuw',
+    myPosition:'Naar mijn positie',recordHere:'Hier vastleggen',onlyFinds:'Alleen eigen vondsten',chance:'kans op vruchtlichamen',chancePrefix:'Kans',dry:'Droog',normal:'Normaal',wet:'Nat',
+    predNoSites:'Nog geen vondsten met locatie — de kans wordt getekend zodra er plekken op de kaart staan.',
+    photoAngles:'hoed van bovenaf · lamellen · voet',photoHintNone:'Maak minstens één foto — hoed, lamellen en voet geven de beste determinatie.',
+    photoHintSome:'Tik een foto aan om hem te verwijderen · {n} van 3',maxPhotos:'Maximaal drie foto\u2019s per vondst.',
+    speciesLabel:'Soort',searchSpecies:'Zoek op naam of Latijnse naam',
+    noSpeciesMatch:'Geen soort in de lijst. Kies een verwante soort en schrijf de twijfel in de veldnotitie — de determinatie kan op de desktop worden aangevuld.',
+    confidence:'Zekerheid',conf:['Niet zeker','Waarschijnlijk','Zeker'],substrate:'Substraat',hostHabitat:'Waardboom & bostype',count:'Aantal',fruitbodies:'vruchtlichamen',
+    notes:'Veldnotities',notesPlaceholder:'Groeiwijze, geur, kleurverandering…',discard:'Weggooien',save:'Opslaan op dit toestel',saveEdit:'Aanvulling opslaan',needPhoto:'Eerst een foto maken',
+    saveHintFix:'Wordt opgeslagen met je huidige positie — er gaat niets naar een server.',saveHintNoFix:'Zonder fix wordt de waarneming zonder locatie bewaard; je kunt hem later aanvullen.',
+    savedToast:'Waarneming opgeslagen op dit toestel.',savedEditToast:'Aanvulling opgeslagen.',photoFirst:'Maak eerst een foto.',
+    searchRecords:'Zoek in waarnemingen',filters:['Alles','Vandaag','Niet zeker','Met locatie'],emptyFilter:'Geen waarneming past bij dit filter.',emptyList:'Nog geen waarnemingen op dit toestel.',
+    listTabs:['Waarnemingen','Soorten'],backToList:'Terug naar de lijst',backToSpecies:'Terug naar de soortenlijst',
+    date:'Datum',confidenceRow:'Zekerheid',countRow:'Aantal',coords:'Coördinaten',substrateRow:'Substraat',host:'Waardboom',habitat:'Bostype',observerRow:'Waarnemer',notesRow:'Veldnotitie',
+    notRecorded:'niet vastgelegd',notFilled:'niet ingevuld',complete:'Aanvullen',del:'Wissen',sure:'Zeker?',deleted:'Waarneming gewist.',
+    sDesc:'Beschrijving',sEco:'Ecologie',sRisk:'Risico & verwarring',ownFinds:'{n} eigen vondsten',recordThis:'Vondst van deze soort vastleggen',
+    idWarning:'Een naslagprofiel, geen determinatie. Eet nooit een vondst op basis van een app alleen — controleer met een lokale sleutel of een kenner.',
+    regions:{all:'Wereldwijd',eu:'Europa',na:'Noord-Amerika',sa:'Zuid-Amerika',af:'Afrika',as:'Azië',oc:'Oceanië'},
+    back:'Terug',language:'Taal',observer:'Waarnemer',observerPh:'Naam of initialen',project:'Project',projectPh:'Bijv. Kartering Veluwezoom 2026',
+    observerNote:'Waarnemer en project worden bij elke nieuwe waarneming meegeschreven en komen mee in de export.',
+    projectsOnDevice:'Projecten op dit toestel',noProject:'Zonder project',projMeta:'{s} soorten · laatste {d}',
+    storage:'Opslag',storageDetail:'Foto\u2019s worden verkleind naar {p} px voor opslag in de database van dit toestel. Er gaat niets naar een server.',
+    export:'Export',exportCsv:'Darwin Core CSV',exportGeo:'GeoJSON voor QGIS',exportBackup:'Volledige back-up met foto\u2019s',
+    import:'Import',importButton:'Back-up of GeoJSON inlezen',
+    importNote:'Waarnemingen worden samengevoegd met wat er al staat; dezelfde waarneming wordt niet twee keer toegevoegd. Handig om veldtoestellen samen te voegen of een back-up terug te zetten.',
+    danger:'Gevarenzone',wipe:'Alle waarnemingen wissen',wipeSure:'Alles wissen — zeker?',wiped:'Alles gewist.',
+    dangerNote:'Alles staat op dit toestel en nergens anders. Exporteer voordat je wist.',
+    nothingToExport:'Niets te exporteren.',csvDone:'CSV gedownload — klaar voor de kartering.',geoDone:'GeoJSON gedownload.',backupDone:'Back-up met foto\u2019s gedownload.',
+    unreadable:'Bestand niet leesbaar.',noRecordsIn:'Geen waarnemingen in dit bestand.',imported:'{n} waarnemingen ingelezen.',nothingNew:'Alles stond er al — niets toegevoegd.',
+    storageFull:'Opslaan mislukt — schijf vol?',noStorage:'Opslag niet beschikbaar in deze browser.',migrated:'{n} oudere waarnemingen overgezet.',
+    mapStyles:{street:'Stratenkaart',terrain:'Terrein',satellite:'Luchtfoto'},
+    tabs:['Vandaag','Kaart','Vondst','Lijst','Beheer'],kickerHome:'Mycota · lokaal opgeslagen',kickerMap:'Kaart',kickerNew:'Nieuwe waarneming',kickerEdit:'Waarneming aanvullen',
+    kickerList:'Waarnemingen op dit toestel',kickerSpecies:'Soorten in de app',kickerDetail:'Waarneming',kickerSettings:'Projectbeheer',
+    titleHome:'Vandaag',titleMap:'Vondsten in het veld',titleNew:'Vastleggen',titleSpecies:'Soorten',titleDetail:'Waarneming',titleSettings:'Beheer',
+    obsOne:'waarneming',obsMany:'waarnemingen',one:'',pcs:'×',noLoc:'geen locatie',
+    subs:['Bodem / strooisel','Mos','Dood hout','Levende stam','Stobbe','Mest','Brandplek'],
+    hosts:['Betula · berk','Pinus · den','Picea · spar','Quercus · eik','Fagus · beuk','Populus / Salix · populier, wilg','Eucalyptus','Palm','Anders / onbekend'],
+    habs:['Loofbos','Naaldbos','Gemengd bos','Grasland / weide','Heide / veen','Berm / laan','Park / tuin','Aanplant','Tropisch regenbos'],
+    months:['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],
+    monthsFull:['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'],
+    yearRound:'hele jaar',
+    tags:{deadly:'Dodelijk',toxic:'Giftig',caution:'Let op',edible:'Eetbaar',inedible:'Niet eetbaar',restricted:'Wettelijk beperkt'},
+    predNote:'Zeshoekig raster van 1 km, gescoord op fenologie ({s}), bodemvocht en {b}; cellen bij plekken met dezelfde waardboom of hetzelfde bostype scoren mee. Donker = hoogste kans.',
+    hexZoom:'Zoom in om het 1 km-raster te tekenen.',
+    weather:'Weer & bodemvocht',refresh:'Verversen',rain7:'{mm} mm regen in de afgelopen week',
+    wxNoPos:'Nog geen positie — zet GPS aan voor een lokale verwachting.',wxLoading:'Verwachting ophalen…',
+    wxOffline:'Geen verbinding — laatste verwachting van {d}.',wxNever:'Nog geen verwachting opgeslagen. Verbind één keer en hij blijft offline beschikbaar.',
+    wxVerdict:{0:'Droge week — vruchtvorming blijft achter.',1:'Normaal vocht — gemiddelde vruchtvorming.',2:'Natte week — goede omstandigheden.'},
+    fruitingNow:'Nu in vruchtvorming',noFruiting:'Niets in seizoen bij dit vochtniveau. Verzet de maand op de kaart om vooruit te kijken.',
+    fruitingBasis:'{m} · {v}',
+    predBasisOwn:'{n} eigen vondsten van deze soort',predBasisNone:'nog geen eigen vondsten van deze soort'},
+};
+
+const SP=[
+ {ln:'Amanita muscaria',tag:'toxic',season:[7,9],reg:['eu','na','as','oc'],sw:'linear-gradient(150deg,#d8503a,#8e3122)',
+  en:{cn:'Fly agaric',s:['Cap 8–20 cm, scarlet to orange with white pyramidal warts that rain washes off; free white gills; ringed white stem with a bulbous base.','Ectomycorrhizal with birch, pine and spruce on poor acid sand; in troops, arcs and rings along paths and forest edges.','Ibotenic acid and muscimol bring nausea, confusion and delirium within one to two hours. Faded caps resemble edible Amanita species — never treat as food.']},
+  nl:{cn:'Vliegenzwam',s:['Hoed 8–20 cm, scharlaken tot oranjerood met witte, piramidevormige vlokken die wegregenen; vrije witte lamellen; witte steel met ring en knol.','Ectomycorrhiza met berk, den en spar op arme, zure zandgrond; in groepen, rijen en kringen langs paden en bosranden.','Iboteenzuur en muscimol geven binnen één tot twee uur misselijkheid, verwardheid en een delirante roes. Uitgeregende exemplaren lijken op eetbare amanieten — nooit als eetbaar behandelen.']}},
+ {ln:'Amanita phalloides',tag:'deadly',season:[7,9],reg:['eu','na','oc','sa'],sw:'linear-gradient(150deg,#9aa871,#5d6a3f)',
+  en:{cn:'Death cap',s:['Olive to yellow-green cap with radial innate fibres, white free gills, ringed stem and a sac-like volva at the base.','With oak and beech on loam and sand; spread worldwide with planted trees and now naturalised in the Americas and Oceania.','Amatoxins. Half a cap can kill and symptoms start only eight to twelve hours later, once liver damage is underway.']},
+  nl:{cn:'Groene knolamaniet',s:['Olijfgroene tot geelgroene hoed met ingegroeide radiale vezels, witte vrije lamellen, geringde steel en een zakvormige beurs.','Bij eik en beuk op leem en zand; met aanplant wereldwijd verspreid en inmiddels ingeburgerd in Amerika en Oceanië.','Amatoxinen. Een halve hoed kan dodelijk zijn en de klachten beginnen pas na acht tot twaalf uur, als de leverschade al loopt.']}},
+ {ln:'Amanita pantherina',tag:'toxic',season:[6,8],reg:['eu','as'],sw:'linear-gradient(150deg,#8d7f6a,#5f5545)',
+  en:{cn:'Panther cap',s:['Brown cap with pure white warts, a smooth ungrooved ring and a sharply rimmed bulb at the stem base.','Broadleaf and mixed forest on poor sandy soil, mostly with oak and beech.','More strongly active than the fly agaric; poisonings run heavier.']},
+  nl:{cn:'Panteramaniet',s:['Bruine hoed met zuiver witte vlokken, gladde ring zonder groeven en een scherp gerande knol aan de voet.','Loof- en gemengd bos op voedselarme zandgrond, vooral bij eik en beuk.','Sterker werkzaam dan de vliegenzwam; vergiftigingen verlopen heftiger.']}},
+ {ln:'Amanita rubescens',tag:'caution',season:[5,9],reg:['eu','as'],sw:'linear-gradient(150deg,#c39a80,#8d6a55)',
+  en:{cn:'Blusher',s:['Dirty pink to brownish cap with greyish warts; the flesh turns red where cut or eaten — the decisive character.','Common in broadleaf and conifer forest on a wide range of soils.','Toxic raw; edible only well cooked, and easily confused with the panther cap.']},
+  nl:{cn:'Parelamaniet',s:['Vuilroze tot bruinige hoed met grauwe vlokken; het vlees verkleurt rood waar het is gesneden of aangevreten — het beslissende kenmerk.','Algemeen in loof- en naaldbos op uiteenlopende bodems.','Rauw giftig; alleen goed verhit eetbaar en makkelijk te verwarren met de panteramaniet.']}},
+ {ln:'Boletus edulis',tag:'edible',season:[7,10],reg:['eu','na','as'],sw:'linear-gradient(150deg,#b08a5e,#6f5133)',
+  en:{cn:'Penny bun · porcini',s:['Bread-brown cap, white net on the upper stem, pores white then yellow-green; flesh white and not blueing.','With beech, oak, pine and spruce on poor soil, returning to the same spot for years.','Confusable with the bitter bolete, which has pink pores and a sharply bitter taste.']},
+  nl:{cn:'Eekhoorntjesbrood',s:['Broodbruine hoed, wit netpatroon op de bovenste steelhelft, poriën eerst wit dan geelgroen; vlees wit, niet blauwend.','Bij beuk, eik, den en spar op arme grond, vaak jaren op dezelfde plek.','Verwarbaar met de bittere galboleet, die roze poriën heeft en scherp bitter smaakt.']}},
+ {ln:'Leccinum scabrum',tag:'edible',season:[6,9],reg:['eu','na'],sw:'linear-gradient(150deg,#9c7550,#6b4e33)',
+  en:{cn:'Brown birch bolete',s:['Grey-brown cap, whitish pores greying with age, stem with dark scabers; flesh soft, barely blueing.','Strictly with birch, on sand and in verges — one of the most reliable indicators of birch mycorrhiza.','Edible cooked; goes soft and maggoty fast.']},
+  nl:{cn:'Gewone berkenboleet',s:['Grijsbruine hoed, wittige poriën die vaalgrijs worden, steel met donkere schubjes; vlees zacht, nauwelijks blauwend.','Strikt bij berk, op zand en in bermen — een van de betrouwbaarste indicatoren van berkenmycorrhiza.','Eetbaar na verhitten; wordt snel week en wormstekig.']}},
+ {ln:'Cantharellus cibarius',tag:'edible',season:[6,9],reg:['eu','na','as'],sw:'linear-gradient(150deg,#e0a83f,#a9752a)',
+  en:{cn:'Chanterelle',s:['Egg-yellow funnel with a wavy margin; no true gills but thick forking ridges running down the stem. Smells of apricot.','Mycorrhizal with oak, beech, birch and pine on poor acid soil, often in moss beside paths.','The false chanterelle has thin true gills and a hollow stem; toxic Omphalotus species grow on wood.']},
+  nl:{cn:'Hanenkam',s:['Dooiergele, trechtervormige hoed met golvende rand; geen echte lamellen maar dikke, gevorkte ribben die op de steel doorlopen. Geur naar abrikoos.','Mycorrhiza met eik, beuk, berk en den op arme, zure grond, vaak in mos langs paden.','De valse hanenkam heeft dunne echte lamellen en een holle steel; giftige Omphalotus-soorten groeien op hout.']}},
+ {ln:'Macrolepiota procera',tag:'edible',season:[7,9],reg:['eu','na','as','af'],sw:'linear-gradient(150deg,#b8a48a,#7a6a55)',
+  en:{cn:'Parasol mushroom',s:['Cap to 30 cm, drumstick-shaped when young, later flat with coarse brown scales and a dark centre; snakeskin stem with a sliding double ring.','Verges, meadows, avenues and open forest edges on moderately rich soil, often in rings.','Smaller Chlorophyllum and Lepiota look-alikes are toxic; the sliding ring and snakeskin stem decide.']},
+  nl:{cn:'Grote parasolzwam',s:['Hoed tot 30 cm, eerst trommelstokvormig, later vlak met grove bruine schubben en donkere top; slangenhuidsteel met verschuifbare dubbele ring.','Bermen, weilanden, lanen en open bosranden op matig rijke grond, vaak in kringen.','Kleinere Chlorophyllum- en Lepiota-soorten zijn giftig; de verschuifbare ring en de slangenhuidsteel zijn beslissend.']}},
+ {ln:'Agaricus campestris',tag:'edible',season:[6,9],reg:['eu','na','sa','af','as','oc'],sw:'linear-gradient(150deg,#ded3c2,#a08f7b)',
+  en:{cn:'Field mushroom',s:['White cap, sometimes finely scaly; gills bright pink then chocolate brown. Thin ring, no bulb or volva.','Manured grassland, pasture and lawns worldwide — never on wood in forest.','Deadly confusion with white Amanita species: those keep white gills and have a volva. Always check gill colour and stem base.']},
+  nl:{cn:'Weidechampignon',s:['Witte hoed, soms fijn schubbig; lamellen eerst helderroze, later chocoladebruin. Dunne ring, geen knol of beurs.','Bemest grasland, weiden en gazons wereldwijd — nooit op hout in het bos.','Levensgevaarlijk te verwarren met witte amanieten: die houden witte lamellen en hebben een beurs. Altijd lamelkleur en steelvoet controleren.']}},
+ {ln:'Chlorophyllum molybdites',tag:'toxic',season:[4,9],reg:['na','sa','af','as','oc'],sw:'linear-gradient(150deg,#cfc7ac,#8b8468)',
+  en:{cn:'Green-spored parasol',s:['Large white parasol with coarse buff scales; gills white at first, turning dull grey-green as the green spores ripen.','Lawns, parks and pasture in warm-temperate to tropical climates, in rings after rain.','The most frequent cause of mushroom poisoning in the United States. Green spore print separates it from edible parasols.']},
+  nl:{cn:'Groensporige parasolzwam',s:['Grote witte parasol met grove okerkleurige schubben; lamellen eerst wit, later grauw groengrijs door de groene sporen.','Gazons, parken en weiden in warmgematigde tot tropische streken, in kringen na regen.','De meest voorkomende oorzaak van paddenstoelvergiftiging in de Verenigde Staten. Een groene sporee scheidt hem van eetbare parasolzwammen.']}},
+ {ln:'Omphalotus olearius',tag:'toxic',season:[7,10],reg:['eu','na','as'],sw:'linear-gradient(150deg,#e08a34,#9a5418)',
+  en:{cn:'Jack-o\u2019-lantern',s:['Deep orange funnel-shaped caps in dense clumps, with true thin gills running down the stem; gill edges glow faintly in the dark.','On stumps and buried roots of olive, oak and other hardwoods in warm regions.','Severe gastric poisoning; the classic dangerous look-alike of the chanterelle, which grows from soil and has blunt ridges.']},
+  nl:{cn:'Olijfkleurige trechterzwam',s:['Diep oranje, trechtervormige hoeden in dichte bundels met echte dunne, aflopende lamellen; de lamelranden lichten zwak op in het donker.','Op stobben en begraven wortels van olijf, eik en ander loofhout in warme streken.','Heftige maag- en darmvergiftiging; de klassieke gevaarlijke dubbelganger van de hanenkam, die uit de bodem komt en stompe ribben heeft.']}},
+ {ln:'Paxillus involutus',tag:'deadly',season:[7,10],reg:['eu','na','as'],sw:'linear-gradient(150deg,#a8763f,#6d4a26)',
+  en:{cn:'Brown roll-rim',s:['Olive-brown cap with a long inrolled, grooved margin; decurrent gills bruising red-brown at a touch.','With birch and pine on sandy soil, also in gardens and parks; very common.','An antigen can trigger fatal destruction of red blood cells after repeated meals, even after years of eating it safely. Never eat, cooked or not.']},
+  nl:{cn:'Gewone krulzoom',s:['Olijfbruine hoed met lang ingerolde, gegroefde rand; aflopende lamellen die bij aanraken roodbruin vlekken.','Bij berk en den op zandgrond, ook in tuinen en parken; zeer algemeen.','Een antigeen kan na herhaald eten een dodelijke afbraak van rode bloedcellen uitlokken, ook na jaren goed gaan. Nooit eten, ook niet verhit.']}},
+ {ln:'Clitocybe nebularis',tag:'toxic',season:[8,11],reg:['eu','as'],sw:'linear-gradient(150deg,#a8a79c,#6c6b61)',
+  en:{cn:'Clouded agaric',s:['Grey, bloomed cap 8–20 cm with cream decurrent gills and a stout stem. Strong sweetish mealy smell.','A late species of broadleaf and conifer forest, in rows and fairy rings in deep litter.','Causes gastric upset in many people and is no longer treated as edible.']},
+  nl:{cn:'Nevelzwam',s:['Grijze, als berijpt lijkende hoed van 8–20 cm met crèmewitte aflopende lamellen en stevige steel. Sterke, zoetige meelgeur.','Late soort van loof- en naaldbos, in rijen en heksenkringen in dik strooisel.','Geeft bij veel mensen maag- en darmklachten en wordt niet meer als eetbaar beschouwd.']}},
+ {ln:'Hypholoma fasciculare',tag:'toxic',season:[5,11],reg:['eu','na','sa','as','oc'],sw:'linear-gradient(150deg,#d3b451,#8f7526)',
+  en:{cn:'Sulphur tuft',s:['Sulphur-yellow cap with a browner centre, gills turning green-yellow, bitter taste, growing in dense tufts.','On stumps and dead wood of broadleaved and coniferous trees; abundant worldwide.','Toxic, with violent gastric symptoms. Confusable with edible Kuehneromyces and Flammulina.']},
+  nl:{cn:'Gewone zwavelkop',s:['Zwavelgele hoed met bruinere top, lamellen groengeel wordend, bittere smaak, in dichte bundels.','Op stobben en dood hout van loof- en naaldbomen; wereldwijd zeer algemeen.','Giftig, met heftige maag- en darmklachten. Verwarbaar met het eetbare stobbezwammetje en het fluweelpootje.']}},
+ {ln:'Pleurotus ostreatus',tag:'edible',season:[9,2],reg:['eu','na','as','oc'],sw:'linear-gradient(150deg,#8d8f96,#565a61)',
+  en:{cn:'Oyster mushroom',s:['Shell-shaped grey-brown to blue-grey caps in tiers, white gills running far down a very short lateral stem.','On dead and weakened hardwood, especially beech and poplar; appears after the first night frost.','Confusable with the smaller, strongly mealy-smelling Pleurocybella and Crepidotus species.']},
+  nl:{cn:'Gewone oesterzwam',s:['Schelpvormige, grijsbruine tot blauwgrijze hoeden in etages, witte lamellen die ver op de korte zijsteel aflopen.','Op dood en zwak loofhout, vooral beuk en populier; verschijnt na de eerste nachtvorst.','Verwarbaar met kleinere Pleurocybella- en Crepidotus-soorten met sterke meelgeur.']}},
+ {ln:'Lentinula edodes',tag:'edible',season:[9,3],reg:['as'],sw:'linear-gradient(150deg,#8b6242,#573a25)',
+  en:{cn:'Shiitake',s:['Umber-brown cap with a cracked, scaly surface and a whitish veil remnant on the margin; white gills, tough fibrous stem.','On dead hardwood of Castanopsis, Quercus and Lithocarpus in East and Southeast Asian broadleaf forest; the world\u2019s most cultivated log-grown mushroom.','Edible cooked; raw fruit bodies can cause a linear toxicoderma rash.']},
+  nl:{cn:'Shiitake',s:['Omberbruine hoed met barstend, schubbig oppervlak en witte velumresten aan de rand; witte lamellen, taaie vezelige steel.','Op dood loofhout van Castanopsis, Quercus en Lithocarpus in Oost- en Zuidoost-Aziatisch loofbos; wereldwijd de meest gekweekte houtsoortpaddenstoel.','Eetbaar na verhitten; rauw kan hij een lijnvormige huiduitslag geven.']}},
+ {ln:'Trametes versicolor',tag:'inedible',season:null,reg:['eu','na','sa','af','as','oc'],sw:'linear-gradient(150deg,#7c8a75,#4d5647)',
+  en:{cn:'Turkey tail',s:['Thin leathery brackets in concentric zones of brown, grey, green and cream; underside white with fine pores.','White-rot fungus on dead hardwood, tiered in large groups, present all year — useful for winter counts.','Too tough to eat, not toxic.']},
+  nl:{cn:'Elfenbankje',s:['Dunne, leerachtige consoles in concentrische zones van bruin, grijs, groen en crème; onderzijde wit met fijne poriën.','Witrotter op dood loofhout, dakpansgewijs in grote groepen, jaarrond aanwezig — bruikbaar voor wintertellingen.','Te hard om te eten, niet giftig.']}},
+ {ln:'Ganoderma applanatum',tag:'inedible',season:null,reg:['eu','na','sa','af','as','oc'],sw:'linear-gradient(150deg,#9b8b74,#5d5342)',
+  en:{cn:'Artist\u2019s bracket',s:['Large flat perennial bracket, dull grey-brown crust above, white pore surface below that bruises brown when scratched.','White rot on living and dead hardwood worldwide; a long-lived stand feature worth mapping.','Woody and inedible; a useful indicator of trunk decay in tree safety surveys.']},
+  nl:{cn:'Platte tonderzwam',s:['Grote, platte meerjarige console, mat grijsbruine korst boven, witte poriënlaag onder die bruin kleurt bij krassen.','Witrot op levend en dood loofhout wereldwijd; een langlevend element dat kartering waard is.','Houtig en niet eetbaar; nuttige indicator van stamrot bij boomveiligheidscontrole.']}},
+ {ln:'Auricularia auricula-judae',tag:'edible',season:null,reg:['eu','as','af'],sw:'linear-gradient(150deg,#7a4b45,#4a2c29)',
+  en:{cn:'Jelly ear',s:['Ear-shaped red-brown rubbery lobes, finely hairy outside; dries hard and swells again after rain.','Mostly on dead elder branches, also on other hardwoods; found year-round.','Edible after longer cooking; neutral taste, crisp texture.']},
+  nl:{cn:'Judasoor',s:['Oorvormige, roodbruine, rubberachtige lobben, buitenkant fijn behaard; droogt hard op en zwelt na regen weer op.','Vooral op dode takken van gewone vlier, ook op ander loofhout; jaarrond te vinden.','Eetbaar na langer verhitten; neutrale smaak, knapperige structuur.']}},
+ {ln:'Laetiporus sulphureus',tag:'caution',season:[4,8],reg:['eu','na','as'],sw:'linear-gradient(150deg,#e6b74a,#c98b2a)',
+  en:{cn:'Chicken of the woods',s:['Thick fleshy orange-yellow brackets in tiers, sulphur-yellow pored underside; chalky white and crumbly when old.','Brown rot on living and dead hardwood, especially oak, willow and fruit trees, also in avenues and parks.','Edible young and well cooked, but upsets a fair share of people; leave material from oak and yew alone.']},
+  nl:{cn:'Zwavelzwam',s:['Dikke, sappige oranjegele consoles in etages met zwavelgele poriënlaag; oud krijtwit en brokkelig.','Bruinrot op levend en dood loofhout, vooral eik, wilg en fruitbomen, ook in lanen en parken.','Jong en goed verhit eetbaar, maar geeft bij een deel van de mensen klachten; laat materiaal van eik en taxus staan.']}},
+ {ln:'Flammulina velutipes',tag:'edible',season:[10,2],reg:['eu','na','as'],sw:'linear-gradient(150deg,#d99a4e,#8f5f28)',
+  en:{cn:'Velvet shank',s:['Sticky orange-brown caps in clumps; stem dark brown and velvety towards the base. Frost-hardy.','On dead hardwood, often elm, willow and beech, in midwinter — the key winter species.','The toxic sulphur tuft is bitter with green-yellow gills; velvet shank has the velvety stem base.']},
+  nl:{cn:'Gewoon fluweelpootje',s:['Kleverige, oranjebruine hoedjes in bundels; steel donkerbruin en fluwelig naar de voet. Vriesvast.','Op dood loofhout, vaak iep, wilg en beuk, midden in de winter — de belangrijkste wintersoort.','De giftige zwavelkop is bitter met groengele lamellen; het fluweelpootje heeft een fluwelen steelvoet.']}},
+ {ln:'Scleroderma citrinum',tag:'toxic',season:[6,10],reg:['eu','na','as'],sw:'linear-gradient(150deg,#c9b565,#8a7833)',
+  en:{cn:'Common earthball',s:['Hard ochre-yellow ball with a coarsely scaly thick wall; inside purple-black with white marbling even when young.','On poor acid sandy soil with birch, oak and pine, often on paths and in moss.','Toxic; mistaken for truffles and for young puffballs, which are pure white inside.']},
+  nl:{cn:'Aardappelbovist',s:['Harde, okergele bol met grof geschubde, dikke wand; binnenin al jong paarszwart met witte marmering.','Op arme, zure zandgrond bij berk, eik en den, vaak op paadjes en in mos.','Giftig; wordt verward met truffels en met jonge stuifzwammen, die binnenin zuiver wit zijn.']}},
+ {ln:'Phallus impudicus',tag:'inedible',season:[5,9],reg:['eu','na','as','oc'],sw:'linear-gradient(150deg,#c8bda6,#7f7562)',
+  en:{cn:'Stinkhorn',s:['From a white egg rises a hollow white stem topped by an olive, slimy, netted head. The carrion smell carries ten metres.','Rich litter and humus in broadleaf forest, dunes, parks and gardens; flies disperse the spores.','The egg is technically edible, the mature fruit body is not; no kitchen species.']},
+  nl:{cn:'Grote stinkzwam',s:['Uit een wit duivelsei groeit een holle witte steel met een olijfgroen geslijmde, netvormige hoed. De aasgeur is op tien meter te ruiken.','Rijk strooisel en humus in loofbos, duinen, parken en tuinen; vliegen verspreiden de sporen.','Het ei is theoretisch eetbaar, de rijpe vrucht niet; geen keukensoort.']}},
+ {ln:'Coprinopsis atramentaria',tag:'caution',season:[3,10],reg:['eu','na','sa','as','oc'],sw:'linear-gradient(150deg,#9b9aa2,#5b5a63)',
+  en:{cn:'Common inkcap',s:['Grey-brown egg-shaped caps in clumps, blackening and dissolving from the margin.','Beside stumps and buried wood in verges, parks and gardens; appears fast after rain.','Contains coprine: with alcohol within days before or after the meal it causes flushing, palpitations and nausea.']},
+  nl:{cn:'Kale inktzwam',s:['Grijsbruine, eivormige hoeden in bundels die vanaf de rand zwart verinkten en vervloeien.','Bij stobben en begraven hout in bermen, parken en tuinen; verschijnt snel na regen.','Bevat coprine: met alcohol binnen enkele dagen vóór of na de maaltijd geeft het blozen, hartkloppingen en misselijkheid.']}},
+ {ln:'Psilocybe semilanceata',tag:'restricted',season:[8,11],reg:['eu','na','oc','sa'],sw:'linear-gradient(150deg,#a89a72,#6b6047)',
+  en:{cn:'Liberty cap',s:['Small sharply conical cap 5–15 mm with a distinct papilla, olive-brown and slimy when moist, drying pale straw; thin wavy stem, purple-brown gills, blue-green bruising.','Among grass in unfertilised grassland, dykes and grazed heath edge — never directly on dung. A good indicator of long-term extensive management.','Legally restricted in many countries. Count fruit bodies per plot, note management, moisture and grass height, and leave the fruit body standing.']},
+  nl:{cn:'Puntig kaalkopje',s:['Kleine, spits kegelvormige hoed van 5–15 mm met duidelijke papil, olijfbruin en glad bij vocht, opdrogend strogeel; dunne golvende steel, paarsbruine lamellen, blauwgroen verkleurend.','Tussen gras in schrale, onbemeste graslanden, dijken en beweide heiderand — nooit direct op mest. Goede indicator van langdurig extensief beheer.','In veel landen wettelijk beperkt, in Nederland via de Opiumwet. Tel vruchtlichamen per plot, noteer beheer, vocht en grashoogte, en laat het vruchtlichaam staan.']}},
+ {ln:'Termitomyces titanicus',tag:'edible',season:[10,3],reg:['af'],sw:'linear-gradient(150deg,#b5a488,#6f6350)',
+  en:{cn:'Termite mushroom',s:['Pale grey-brown cap with a pointed umbo, reaching a metre across in the largest species; long pseudorhiza running down to the termite nest.','Grown by Macrotermes termites in their fungus combs across sub-Saharan savanna and miombo woodland; fruits with the rains.','Prized food across Africa and Asia. Its presence marks an intact termite colony, which makes it a useful land-health record.']},
+  nl:{cn:'Termietenzwam',s:['Vaalgrijsbruine hoed met spitse top, bij de grootste soorten tot een meter breed; lange pseudorhiza die naar het termietennest loopt.','Gekweekt door Macrotermes-termieten in hun schimmelkammen in de savanne en het miombobos van Afrika; komt op met de regens.','Gewaardeerd voedsel in Afrika en Azië. De aanwezigheid markeert een intacte termietenkolonie en is daarmee een nuttige indicator voor bodemgezondheid.']}},
+ {ln:'Fomitopsis betulina',tag:'inedible',season:null,reg:['eu','na','as'],sw:'linear-gradient(150deg,#cfc3ae,#8e8272)',
+  en:{cn:'Birch polypore',s:['Kidney-shaped smooth brackets, pale brown above, white pored below; corky and light.','Only on birch, usually on dying or dead trunks; present all year and therefore useful for winter counts.','Too bitter and tough to eat, not toxic.']},
+  nl:{cn:'Berkenzwam',s:['Niervormige, gladde consoles, lichtbruin boven, wit met poriën onder; kurkachtig en licht.','Uitsluitend op berk, meestal op stervende of dode stammen; jaarrond aanwezig en daarom nuttig voor wintertellingen.','Te bitter en te hard om te eten, niet giftig.']}},
+];
+const MOIST=[0.45,1,1.25];
+const emptyDraft=()=>({id:null,photos:[],species:0,conf:1,subs:[0],host:0,habitat:0,count:1,notes:''});
+
+class Component extends DCLogic {
+  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,moist:1,hexNote:''};
+  mapRef=React.createRef();
+
+  t(){ const l=this.state.lang||(this.props.language==='Nederlands'?'nl':'en'); return T[l]||T.en; }
+  lang(){ return this.state.lang||(this.props.language==='Nederlands'?'nl':'en'); }
+
+  async componentDidMount(){
+    try{
+      const rows=await all(STORE), meta=await all(META), m={};
+      meta.forEach(x=>m[x.k]=x.v);
+      this.setState({records:rows.sort((a,b)=>b.ts-a.ts),observer:m.observer||'',project:m.project||'',lang:m.lang||null,wx:m.wx||null});
+      const legacy=localStorage.getItem('mycota.veld.v1');
+      if(legacy&&!rows.length){
+        const old=JSON.parse(legacy);
+        for(const r of old) await put(STORE,r);
+        this.setState({records:old.sort((a,b)=>b.ts-a.ts)});
+        this.say(this.t().migrated.replace('{n}',old.length));
+      }
+    }catch(e){ this.say(this.t().noStorage); }
+    this.startGps();
+  }
+  componentDidUpdate(){
+    if(this.state.view==='map') this.ensureMap();
+    const p=this.state.pos;
+    if(p){
+      const key=p.lat.toFixed(2)+','+p.lon.toFixed(2);
+      if(this._wxKey!==key){ this._wxKey=key; this.loadWeather(p.lat,p.lon); }
+    }
+  }
+
+  async loadWeather(lat,lon){
+    this.setState({wxLoading:true});
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(3)+'&longitude='+lon.toFixed(3)
+      +'&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&past_days=7&forecast_days=5&timezone=auto';
+    try{
+      const res=await fetch(url);
+      if(!res.ok) throw new Error('http');
+      const j=await res.json(), dd=j.daily||{};
+      const days=(dd.time||[]).map((date,i)=>({date,mm:dd.precipitation_sum?dd.precipitation_sum[i]:0,
+        tmax:dd.temperature_2m_max?dd.temperature_2m_max[i]:null,tmin:dd.temperature_2m_min?dd.temperature_2m_min[i]:null}));
+      const wx={days,fetched:Date.now(),lat,lon};
+      this.setState({wx,wxLoading:false,wxErr:null});
+      put(META,{k:'wx',v:wx}).catch(()=>{});
+      if(!this._moistSet){ this._moistSet=true; this.setState({moist:this.moistIndex(wx)}); }
+    }catch(e){ this.setState({wxLoading:false,wxErr:'offline'}); }
+  }
+  moistIndex(wx){
+    if(!wx) return 1;
+    const today=new Date().toISOString().slice(0,10);
+    const sum=wx.days.filter(d=>d.date<today).reduce((n,d)=>n+(d.mm||0),0);
+    return sum<10?0:sum<=35?1:2;
+  }
+  componentWillUnmount(){ if(this.watchId!=null&&navigator.geolocation) navigator.geolocation.clearWatch(this.watchId); }
+
+  say(msg){ clearTimeout(this._t); this.setState({toast:msg}); this._t=setTimeout(()=>this.setState({toast:''}),2800); }
+  setMeta(k,v){ this.setState({[k]:v}); put(META,{k,v}).catch(()=>{}); }
+
+  seasonList(season){
+    if(!season) return null;
+    const out=[]; let i=season[0];
+    while(true){ out.push(i); if(i===season[1]) break; i=(i+1)%12; }
+    return out;
+  }
+  seasonLabel(season){
+    const t=this.t();
+    if(!season) return t.yearRound;
+    return t.months[season[0]]+'–'+t.months[season[1]];
+  }
+  phenology(season,month1){
+    const list=this.seasonList(season);
+    if(!list) return 0.6;
+    const i=list.indexOf(month1-1);
+    if(i<0) return 0.06;
+    if(list.length===1) return 1;
+    return 0.45+0.55*Math.sin(Math.PI*(i/(list.length-1)));
+  }
+
+  startGps(){
+    const t=this.t();
+    if(!navigator.geolocation){ this.setState({posErr:t.gpsNone}); return; }
+    this.watchId=navigator.geolocation.watchPosition(
+      p=>this.setState({pos:{lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy},posErr:null,watching:true}),
+      e=>this.setState({posErr:e.code===1?t.gpsDenied:t.noFix,watching:true}),
+      {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+    this.setState({watching:true});
+  }
+  stopGps(){ if(this.watchId!=null&&navigator.geolocation) navigator.geolocation.clearWatch(this.watchId); this.watchId=null; this.setState({watching:false}); }
+
+  ensureMap(){
+    const el=this.mapRef.current||document.getElementById('mv-map');
+    if(!window.L) return;
+    if(!el||!el.isConnected){
+      if(!this._retry) this._retry=requestAnimationFrame(()=>{this._retry=null; if(this.state.view==='map') this.ensureMap();});
+      return;
+    }
+    if(!this._mapDiv){
+      this._mapDiv=document.createElement('div');
+      this._mapDiv.style.cssText='position:absolute;inset:0';
+    }
+    if(this._mapDiv.parentNode!==el){ el.appendChild(this._mapDiv); if(this._map) setTimeout(()=>this._map&&this._map.invalidateSize(),30); }
+    const styles={street:{u:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',a:'© OpenStreetMap · © CARTO'},
+      terrain:{u:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',a:'© OpenStreetMap · © CARTO'},
+      satellite:{u:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',a:'Esri World Imagery'}};
+    const key=this.props.mapStyle||'street', tile=styles[key]||styles.street;
+    if(!this._map){
+      const locd=this.state.records.filter(r=>r.lat!=null);
+      let c=[20,10], z=2;
+      if(this._view){ c=this._view.c; z=this._view.z; }
+      else if(this.state.pos){ c=[this.state.pos.lat,this.state.pos.lon]; z=15; }
+      else if(locd.length){ c=[locd[0].lat,locd[0].lon]; z=13; }
+      this._map=window.L.map(this._mapDiv,{zoomControl:false,attributionControl:true}).setView(c,z);
+      this._tile=window.L.tileLayer(tile.u,{maxZoom:19,attribution:tile.a,subdomains:'abcd'}).addTo(this._map);
+      this._tileKey=key;
+      this._pred=window.L.layerGroup().addTo(this._map);
+      this._layer=window.L.layerGroup().addTo(this._map);
+      this._map.on('moveend zoomend',()=>{
+        this._view={c:this._map.getCenter(),z:this._map.getZoom()};
+        this.drawPrediction();
+      });
+    } else if(this._tileKey!==key){
+      this._map.removeLayer(this._tile);
+      this._tile=window.L.tileLayer(tile.u,{maxZoom:19,attribution:tile.a,subdomains:'abcd'}).addTo(this._map);
+      this._tileKey=key;
+    }
+    if(this.state.pos&&!this._centered&&!this._view){
+      this._centered=true;
+      this._map.setView([this.state.pos.lat,this.state.pos.lon],15);
+    }
+    setTimeout(()=>this._map&&this._map.invalidateSize(),50);
+    this.drawMarkers();
+  }
+  drawPrediction(){
+    if(!this._pred||!this._map) return;
+    this._pred.clearLayers();
+    const idx=this.state.predSpecies;
+    if(idx==null){ if(this.state.hexNote) this.setState({hexNote:''}); return; }
+    const L=window.L, map=this._map, sp=SP[idx];
+    const ph=this.phenology(sp.season,this.state.predMonth), mf=MOIST[this.state.moist];
+    const sites=this.state.records.filter(r=>r.lat!=null);
+    const own=sites.filter(r=>r.species===sp.ln);
+    const hosts=new Set(own.map(r=>r.host)), habs=new Set(own.map(r=>r.habitat));
+
+    const R=1000/Math.sqrt(3);
+    const degLat=m=>m/110540, degLon=(m,lat)=>m/(111320*Math.cos(lat*Math.PI/180));
+    const b=map.getBounds().pad(0.08);
+    const midLat=(b.getNorth()+b.getSouth())/2;
+    const dy=degLat(Math.sqrt(3)*R), dx=degLon(1.5*R,midLat);
+    const cols=Math.ceil((b.getEast()-b.getWest())/dx)+1, rows=Math.ceil((b.getNorth()-b.getSouth())/dy)+1;
+    if(cols*rows>2600){ if(!this.state.hexNote) this.setState({hexNote:'zoom'}); return; }
+    if(this.state.hexNote) this.setState({hexNote:''});
+
+    const score=(lat,lon)=>{
+      let sum=0;
+      for(const r of sites){
+        const dxm=(lon-r.lon)*111320*Math.cos(lat*Math.PI/180), dym=(lat-r.lat)*110540;
+        const dist=Math.sqrt(dxm*dxm+dym*dym);
+        if(dist>2500) continue;
+        const base=r.species===sp.ln?1:(hosts.has(r.host)?0.6:(habs.has(r.habitat)?0.4:0.14));
+        sum+=base*Math.exp(-Math.pow(dist/700,2));
+      }
+      return Math.max(0,Math.min(1,ph*mf*(0.35+0.65*(1-Math.exp(-1.3*sum)))));
+    };
+
+    for(let i=0;i<cols;i++){
+      const lon=b.getWest()+i*dx;
+      for(let j=0;j<rows;j++){
+        const lat=b.getSouth()+j*dy+(i%2?dy/2:0);
+        const s=score(lat,lon);
+        if(s<0.06) continue;
+        const ring=[];
+        for(let k=0;k<6;k++){
+          const a=k*Math.PI/3;
+          ring.push([lat+degLat(R*Math.sin(a)),lon+degLon(R*Math.cos(a),lat)]);
+        }
+        const col=s<0.34?'#7a8a5e':s<0.67?'#c9973f':'#c67139';
+        L.polygon(ring,{color:col,weight:1,opacity:0.5,fillColor:col,fillOpacity:0.12+0.45*s})
+          .bindTooltip(Math.round(s*100)+'% · 1 km²',{direction:'top',sticky:true}).addTo(this._pred);
+      }
+    }
+  }
+  drawMarkers(){
+    this.drawPrediction();
+    if(!this._layer) return;
+    this._layer.clearLayers();
+    const L=window.L, loc=this.t().loc;
+    this.state.records.forEach(r=>{
+      if(r.lat==null) return;
+      const m=L.circleMarker([r.lat,r.lon],{radius:9,color:'#fdf6ea',weight:3,fillColor:'#c67139',fillOpacity:.95});
+      m.bindPopup('<b>'+(r.common||r.species)+'</b><br>'+new Date(r.ts).toLocaleString(loc)+'<br>'+r.count+' · ±'+Math.round(r.acc||0)+' m');
+      m.on('click',()=>this.setState({detailId:r.id}));
+      m.addTo(this._layer);
+    });
+    const p=this.state.pos;
+    if(p){
+      L.circle([p.lat,p.lon],{radius:Math.max(6,p.acc||10),color:'#2f6fb5',weight:1,fillColor:'#2f6fb5',fillOpacity:.12}).addTo(this._layer);
+      L.circleMarker([p.lat,p.lon],{radius:7,color:'#fdf6ea',weight:3,fillColor:'#2f6fb5',fillOpacity:1}).addTo(this._layer);
+    }
+  }
+
+  async shrink(file){
+    const max=Math.min(2000,this.props.photoSize||1600);
+    const url=URL.createObjectURL(file);
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});
+    const s=Math.min(1,max/Math.max(img.width,img.height));
+    const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);
+    return c.toDataURL('image/jpeg',0.74);
+  }
+  download(name,text,type){
+    const blob=new Blob([text],{type}); const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  }
+
+  renderVals(){
+    const st=this.state, d=st.draft, pos=st.pos, rec=st.records, t=this.t(), lg=this.lang(), loc=t.loc;
+    const sp=i=>{const s=SP[i]||SP[0]; return {...s,...s[lg]};};
+    const fmt=n=>n.toLocaleString(loc,{minimumFractionDigits:4,maximumFractionDigits:4});
+    const when=ts=>new Date(ts).toLocaleString(loc,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const thumb=r=>r.photos&&r.photos[0]?'url('+r.photos[0]+')':'none';
+    const nameOf=r=>{const hit=SP.find(x=>x.ln===r.species); return hit?hit[lg].cn:(r.common||r.species);};
+    const tagCols=k=>k==='deadly'?{tagBg:ACC3,tagFg:ACC8}:k==='toxic'?{tagBg:ACC2,tagFg:ACC8}:k==='edible'?{tagBg:S2,tagFg:S8}:{tagBg:N2,tagFg:N8};
+    const label=(arr,i)=>arr[i]!==undefined?arr[i]:'';
+    const mapRecord=r=>({
+      title:nameOf(r)+' · '+r.count+'×',
+      meta:when(r.ts)+' · '+label(t.conf,r.conf),
+      where:r.lat!=null?fmt(r.lat)+'° N, '+fmt(r.lon)+'° E · ±'+Math.round(r.acc||0)+' m':t.noLoc,
+      thumb:thumb(r), open:()=>this.setState({detailId:r.id,view:'detail'}),
+    });
+
+    const tabDef=[['home','M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z'],
+                  ['map','M9 3 3 5v16l6-2 6 2 6-2V3l-6 2z'],
+                  ['new','M12 5v14M5 12h14'],
+                  ['records','M11 20A7 7 0 0 1 4 13c0-6 8-9 16-9 0 8-4 13-9 13z'],
+                  ['settings','M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M4 12h1M19 12h1M12 4v1M12 19v1M6.5 6.5l.8.8M16.7 16.7l.8.8M17.5 6.5l-.8.8M7.3 16.7l-.8.8']];
+    const tabs=tabDef.map(([k,icon],i)=>{
+      const on=st.view===k||(k==='records'&&st.view==='detail');
+      return {label:t.tabs[i],icon,fg:on?ACC7:N6,bg:on?ACC1:'transparent',
+        go:()=>k==='new'?this.setState({view:'new',draft:emptyDraft(),speciesQuery:''}):this.setState({view:k,openSpecies:null,detailId:null,armed:null})};
+    });
+    const listTabs=t.listTabs.map((lab,i)=>{const k=i?'species':'records';
+      return {label:lab,bg:st.listMode===k?N1:'transparent',fg:st.listMode===k?ACC7:N6,pick:()=>this.setState({listMode:k,openSpecies:null})};});
+
+    const today=new Date().toDateString();
+    const detail=rec.find(r=>r.id===st.detailId)||null;
+    const mb=rec.reduce((n,r)=>n+(r.photos||[]).reduce((m,p)=>m+p.length,0)+300,0)/1048576;
+    const openIdx=st.openSpecies, open=openIdx!=null?sp(openIdx):null;
+    const q=st.query.trim().toLowerCase();
+    const filtered=rec.filter(r=>{
+      if(st.filter===1&&new Date(r.ts).toDateString()!==today) return false;
+      if(st.filter===2&&r.conf!==0) return false;
+      if(st.filter===3&&r.lat==null) return false;
+      if(!q) return true;
+      return (r.species+' '+nameOf(r)+' '+(r.notes||'')+' '+(r.project||'')+' '+(r.habitatLabel||'')).toLowerCase().includes(q);
+    });
+    const sq=st.speciesQuery.trim().toLowerCase();
+    const draftIdx=SP.map((s,i)=>i).filter(i=>!sq||(SP[i][lg].cn+' '+SP[i].ln).toLowerCase().includes(sq));
+    const regionIdx=SP.map((s,i)=>i).filter(i=>st.region==='all'||SP[i].reg.includes(st.region));
+
+    return {
+      tRecords:t.records,tToday:t.today,tSpecies:t.species,tUnsure:t.unsure,tNewRecord:t.newRecord,tLatest:t.latest,tAll:t.all,tEmptyHome:t.emptyHome,
+      tMyPosition:t.myPosition,tRecordHere:t.recordHere,tChance:t.chance,tPhotoAngles:t.photoAngles,tSpeciesLabel:t.speciesLabel,tSearchSpecies:t.searchSpecies,
+      tNoSpeciesMatch:t.noSpeciesMatch,tConfidence:t.confidence,tSubstrate:t.substrate,tHostHabitat:t.hostHabitat,tCount:t.count,tFruitbodies:t.fruitbodies,
+      tNotes:t.notes,tNotesPlaceholder:t.notesPlaceholder,tDiscard:t.discard,tSearchRecords:t.searchRecords,tBackToList:t.backToList,tBackToSpecies:t.backToSpecies,
+      tComplete:t.complete,tIdWarning:t.idWarning,tRecordThisSpecies:t.recordThis,tBack:t.back,tLanguage:t.language,tObserver:t.observer,tObserverPlaceholder:t.observerPh,
+      tProject:t.project,tProjectPlaceholder:t.projectPh,tObserverNote:t.observerNote,tProjectsOnDevice:t.projectsOnDevice,tStorage:t.storage,
+      tExport:t.export,tExportCsv:t.exportCsv,tExportGeo:t.exportGeo,tExportBackup:t.exportBackup,tImport:t.import,tImportButton:t.importButton,tImportNote:t.importNote,
+      tDanger:t.danger,tDangerNote:t.dangerNote,tMonthFirst:t.months[0],tMonthLast:t.months[11],
+
+      headerKicker:{home:t.kickerHome,map:t.kickerMap+' · '+(t.mapStyles[this.props.mapStyle||'street']||t.mapStyles.street),new:d.id?t.kickerEdit:t.kickerNew,
+        records:st.listMode==='species'?t.kickerSpecies:t.kickerList,detail:t.kickerDetail,settings:t.kickerSettings}[st.view],
+      headerTitle:{home:t.titleHome,map:t.titleMap,new:t.titleNew,
+        records:st.listMode==='species'?(open?open.cn:t.titleSpecies):rec.length+' '+(rec.length===1?t.obsOne:t.obsMany),
+        detail:detail?when(detail.ts):t.titleDetail,settings:t.titleSettings}[st.view],
+      isHome:st.view==='home', isMap:st.view==='map', isNew:st.view==='new',
+      isRecords:st.view==='records'&&st.listMode==='records', isDetail:st.view==='detail',
+      isSpecies:st.view==='records'&&st.listMode==='species', isSettings:st.view==='settings',
+      tabs, listTabs, toast:st.toast, mapRef:this.mapRef,
+      goHome:()=>this.setState({view:'home',armed:null}),
+      goRecords:()=>this.setState({view:'records',listMode:'records',detailId:null,armed:null}),
+      goSettings:()=>this.setState({view:'settings'}),
+
+      gpsLabel:!st.watching?t.gpsOff:pos?'±'+Math.round(pos.acc)+' m':(st.posErr||t.gpsSearch),
+      gpsBg:pos?S2:st.watching?ACC2:N2, gpsFg:pos?S8:st.watching?ACC8:N8,
+      toggleGps:()=>st.watching?this.stopGps():this.startGps(),
+
+      recordCount:rec.length, hasRecords:rec.length>0, noRecords:rec.length===0,
+      todayCount:rec.filter(r=>new Date(r.ts).toDateString()===today).length,
+      speciesCount:new Set(rec.map(r=>r.species)).size,
+      unsureCount:rec.filter(r=>r.conf===0).length,
+      homeHeadline:rec.length?when(rec[0].ts):t.nothingStored,
+      homeSub:pos?(fmt(pos.lat)+'° N, '+fmt(pos.lon)+'° E · ±'+Math.round(pos.acc)+' m'):t.searchingSats,
+      recentRecords:rec.slice(0,4).map(mapRecord),
+      observerLine:st.observer?(st.observer+(st.project?' · '+st.project:'')):t.setObserver,
+      storageLine:rec.length?(mb.toFixed(1)+' MB'):t.nothingStored,
+
+      tWeather:t.weather, tRefresh:t.refresh, tFruitingNow:t.fruitingNow, tNoFruiting:t.noFruiting,
+      refreshWeather:()=>{ if(pos) this.loadWeather(pos.lat,pos.lon); else this.say(t.wxNoPos); },
+      wxHeadline:(()=>{
+        if(st.wxLoading&&!st.wx) return t.wxLoading;
+        if(!st.wx) return pos?t.wxNever:t.wxNoPos;
+        const today=new Date().toISOString().slice(0,10);
+        const mm=st.wx.days.filter(x=>x.date<today).reduce((n,x)=>n+(x.mm||0),0);
+        return t.rain7.replace('{mm}',mm.toFixed(0));
+      })(),
+      wxSub:(()=>{
+        if(!st.wx) return '';
+        const mi=this.moistIndex(st.wx);
+        const stale=st.wxErr==='offline';
+        return stale?t.wxOffline.replace('{d}',when(st.wx.fetched)):t.wxVerdict[mi];
+      })(),
+      hasForecast:!!(st.wx&&st.wx.days.length),
+      forecastDays:(()=>{
+        if(!st.wx) return [];
+        const today=new Date().toISOString().slice(0,10);
+        return st.wx.days.filter(x=>x.date>=today).slice(0,5).map((x,i)=>({
+          day:new Date(x.date+'T12:00').toLocaleDateString(loc,{weekday:'short'}),
+          mm:(x.mm||0).toFixed(x.mm>=10?0:1)+' mm',
+          temp:x.tmax!=null?Math.round(x.tmax)+'°':'',
+          bg:i===0?ACC1:N2}));
+      })(),
+      fruitingBasis:(()=>{
+        const mi=st.wx?this.moistIndex(st.wx):st.moist;
+        return t.fruitingBasis.replace('{m}',t.monthsFull[new Date().getMonth()]).replace('{v}',[t.dry,t.normal,t.wet][mi]);
+      })(),
+      fruitingNow:(()=>{
+        const mi=st.wx?this.moistIndex(st.wx):st.moist, m=new Date().getMonth()+1;
+        return regionIdx.map(i=>({i,score:Math.min(1,this.phenology(SP[i].season,m)*MOIST[mi])}))
+          .filter(x=>x.score>=0.3).sort((a,b)=>b.score-a.score).slice(0,6)
+          .map(x=>{const s=sp(x.i);
+            return {common:s.cn,latin:s.ln,swatch:s.sw,pct:Math.round(x.score*100)+'%',
+              open:()=>this.setState({view:'records',listMode:'species',openSpecies:x.i})};});
+      })(),
+      noFruiting:(()=>{
+        const mi=st.wx?this.moistIndex(st.wx):st.moist, m=new Date().getMonth()+1;
+        return !regionIdx.some(i=>this.phenology(SP[i].season,m)*MOIST[mi]>=0.3);
+      })(),
+
+      startDraft:()=>this.setState({view:'new',draft:emptyDraft(),speciesQuery:''}),
+      startDraftHere:()=>this.setState({view:'new',draft:{...emptyDraft(),species:openIdx||0},speciesQuery:''}),
+      centerMe:()=>{ if(pos&&this._map) this._map.setView([pos.lat,pos.lon],16); else this.say(t.noFix); },
+
+      predOptions:[{label:t.onlyFinds,value:''},...SP.map((s,i)=>({label:t.chancePrefix+' · '+s[lg].cn+' ('+this.seasonLabel(s.season)+')',value:String(i)}))
+        .sort((a,b)=>a.label.localeCompare(b.label,loc))],
+      predValue:st.predSpecies==null?'':String(st.predSpecies),
+      onPredSelect:(e)=>{
+        const v=e.target.value===''?null:Number(e.target.value);
+        this.setState({predSpecies:v});
+        if(v!=null&&this._map&&this._map.getZoom()<12){
+          if(pos) this._map.setView([pos.lat,pos.lon],13);
+          else {
+            const locd=rec.filter(r=>r.lat!=null);
+            if(locd.length) this._map.fitBounds(locd.map(r=>[r.lat,r.lon]),{maxZoom:13,padding:[40,40]});
+          }
+        }
+      },
+      predOn:st.predSpecies!=null,
+      predTitle:st.predSpecies!=null?sp(st.predSpecies).cn+' · '+this.seasonLabel(SP[st.predSpecies].season):'',
+      predPeak:st.predSpecies!=null?Math.round(this.phenology(SP[st.predSpecies].season,st.predMonth)*MOIST[st.moist]*100)+'%':'',
+      predMonth:st.predMonth, predMonthLabel:t.monthsFull[st.predMonth-1],
+      onPredMonth:(e)=>this.setState({predMonth:Number(e.target.value)}),
+      moistOptions:[t.dry,t.normal,t.wet].map((lab,i)=>({label:lab,bg:st.moist===i?ACC:N2,fg:st.moist===i?CREAM:N8,pick:()=>this.setState({moist:i})})),
+      predNote:st.predSpecies==null?'':(()=>{
+        const s=SP[st.predSpecies], own=rec.filter(r=>r.species===s.ln).length;
+        if(st.hexNote==='zoom') return t.hexZoom;
+        const basis=own?t.predBasisOwn.replace('{n}',own):t.predBasisNone;
+        return t.predNote.replace('{s}',this.seasonLabel(s.season)).replace('{b}',basis);
+      })(),
+
+      draftHero:d.photos[0]?'url('+d.photos[0]+')':'none', draftNoPhoto:!d.photos.length,
+      draftThumbs:d.photos.map((p,i)=>({thumb:'url('+p+')',remove:()=>this.setState({draft:{...d,photos:d.photos.filter((_,j)=>j!==i)}})})),
+      photoHint:d.photos.length?t.photoHintSome.replace('{n}',d.photos.length):t.photoHintNone,
+      onPhoto:async(e)=>{
+        const files=[...e.target.files].slice(0,3-this.state.draft.photos.length);
+        e.target.value='';
+        if(!files.length){ this.say(t.maxPhotos); return; }
+        const shots=[]; for(const f of files){ try{ shots.push(await this.shrink(f)); }catch(err){} }
+        this.setState({draft:{...this.state.draft,photos:[...this.state.draft.photos,...shots]}});
+      },
+      fixCoords:pos?fmt(pos.lat)+'° N, '+fmt(pos.lon)+'° E':t.noFix,
+      fixMeta:pos?t.accLive.replace('{a}',Math.round(pos.acc)):(st.posErr||t.searchingSats),
+      fixBg:pos?S1:ACC1, fixFg:pos?S7:ACC8, fixDotBg:pos?'var(--color-accent-2-300)':ACC2,
+      fixBtn:st.watching?t.again:t.turnOn,
+
+      speciesQuery:st.speciesQuery, onSpeciesQuery:(e)=>this.setState({speciesQuery:e.target.value}),
+      noSpeciesMatch:draftIdx.length===0,
+      speciesOptions:draftIdx.map(i=>{const s=sp(i);
+        return {common:s.cn,latin:s.ln,swatch:s.sw,tag:t.tags[s.tag],...tagCols(s.tag),
+          bg:d.species===i?ACC1:N1,border:d.species===i?ACC:'transparent',pick:()=>this.setState({draft:{...d,species:i}})};}),
+      confidenceOptions:t.conf.map((lab,i)=>({label:lab,bg:d.conf===i?ACC:N2,fg:d.conf===i?CREAM:N8,pick:()=>this.setState({draft:{...d,conf:i}})})),
+      substrateOptions:t.subs.map((lab,i)=>{const on=d.subs.includes(i);
+        return {label:lab,bg:on?ACC:N1,fg:on?CREAM:N8,toggle:()=>this.setState({draft:{...d,subs:on?d.subs.filter(x=>x!==i):[...d.subs,i]}})};}),
+      hostOptions:t.hosts, habitatOptions:t.habs, draftHost:t.hosts[d.host], draftHabitat:t.habs[d.habitat],
+      onHost:(e)=>this.setState({draft:{...d,host:Math.max(0,t.hosts.indexOf(e.target.value))}}),
+      onHabitat:(e)=>this.setState({draft:{...d,habitat:Math.max(0,t.habs.indexOf(e.target.value))}}),
+      draftCount:d.count, draftNotes:d.notes,
+      incCount:()=>this.setState({draft:{...d,count:d.count+1}}),
+      decCount:()=>this.setState({draft:{...d,count:Math.max(1,d.count-1)}}),
+      onNotes:(e)=>this.setState({draft:{...d,notes:e.target.value}}),
+
+      saveLabel:!d.photos.length?t.needPhoto:d.id?t.saveEdit:t.save,
+      saveBg:d.photos.length?ACC:N2, saveFg:d.photos.length?CREAM:N6,
+      saveHint:pos?t.saveHintFix:t.saveHintNoFix,
+      cancelDraft:()=>this.setState({view:'home',draft:emptyDraft()}),
+      saveDraft:async()=>{
+        if(!d.photos.length){ this.say(t.photoFirst); return; }
+        const s=SP[d.species]||SP[0];
+        const prev=d.id?rec.find(r=>r.id===d.id):null;
+        const r={id:d.id||Date.now(),ts:prev?prev.ts:Date.now(),species:s.ln,common:s.en.cn,conf:d.conf,
+          subs:d.subs,host:d.host,habitat:d.habitat,count:d.count,notes:d.notes,photos:d.photos,
+          observer:st.observer,project:st.project,
+          lat:pos?pos.lat:(prev?prev.lat:null),lon:pos?pos.lon:(prev?prev.lon:null),acc:pos?pos.acc:(prev?prev.acc:null)};
+        try{ await put(STORE,r); }catch(e){ this.say(t.storageFull); return; }
+        this.setState({records:[r,...rec.filter(x=>x.id!==r.id)].sort((a,b)=>b.ts-a.ts),
+          view:d.id?'detail':'home',detailId:d.id||null,draft:emptyDraft()});
+        this.say(d.id?t.savedEditToast:t.savedToast);
+      },
+
+      query:st.query, onQuery:(e)=>this.setState({query:e.target.value}),
+      filters:t.filters.map((lab,i)=>({label:lab,bg:st.filter===i?ACC:N2,fg:st.filter===i?CREAM:N8,pick:()=>this.setState({filter:i})})),
+      filteredRecords:filtered.map(mapRecord), noFiltered:filtered.length===0,
+      emptyListLine:rec.length?t.emptyFilter:t.emptyList,
+
+      detailHero:detail?thumb(detail):'none',
+      detailThumbs:detail?(detail.photos||[]).map(p=>({thumb:'url('+p+')'})):[],
+      detailCommon:detail?nameOf(detail):'', detailLatin:detail?detail.species:'',
+      detailRows:detail?[
+        {k:t.date,v:new Date(detail.ts).toLocaleString(loc)},
+        {k:t.confidenceRow,v:label(t.conf,detail.conf)},
+        {k:t.countRow,v:detail.count+' '+t.fruitbodies},
+        {k:t.coords,v:detail.lat!=null?fmt(detail.lat)+'° N, '+fmt(detail.lon)+'° E · ±'+Math.round(detail.acc||0)+' m':t.notRecorded},
+        {k:t.substrateRow,v:(detail.subs||[]).map(i=>t.subs[i]).filter(Boolean).join(', ')||'—'},
+        {k:t.host,v:t.hosts[detail.host]||'—'},
+        {k:t.habitat,v:t.habs[detail.habitat]||'—'},
+        {k:t.observerRow,v:[detail.observer,detail.project].filter(Boolean).join(' · ')||t.notFilled},
+        {k:t.notesRow,v:detail.notes||'—'},
+      ]:[],
+      editRecord:()=>{ if(!detail) return;
+        const i=SP.findIndex(s=>s.ln===detail.species);
+        this.setState({view:'new',speciesQuery:'',draft:{id:detail.id,photos:detail.photos||[],species:i<0?0:i,
+          conf:detail.conf||0,subs:detail.subs||[],host:detail.host||0,habitat:detail.habitat||0,
+          count:detail.count||1,notes:detail.notes||''}});},
+      deleteLabel:st.armed==='del'?t.sure:t.del,
+      deleteRecord:async()=>{
+        if(!detail) return;
+        if(st.armed!=='del'){ this.setState({armed:'del'}); return; }
+        await del(STORE,detail.id);
+        this.setState({records:rec.filter(r=>r.id!==detail.id),view:'records',listMode:'records',detailId:null,armed:null});
+        this.say(t.deleted);
+      },
+
+      langOptions:[['en','English'],['nl','Nederlands']].map(([k,lab])=>({label:lab,
+        bg:lg===k?N1:'transparent',fg:lg===k?ACC7:N6,pick:()=>this.setMeta('lang',k)})),
+      observer:st.observer, project:st.project,
+      onObserver:(e)=>this.setMeta('observer',e.target.value),
+      onProject:(e)=>this.setMeta('project',e.target.value),
+      hasProjects:rec.length>0,
+      projectRows:(()=>{
+        const g={};
+        rec.forEach(r=>{const k=r.project||t.noProject;(g[k]=g[k]||[]).push(r);});
+        return Object.keys(g).sort((a,b)=>a.localeCompare(b,loc)).map(name=>{
+          const rows=g[name];
+          return {name,count:rows.length,
+            meta:t.projMeta.replace('{s}',new Set(rows.map(r=>r.species)).size).replace('{d}',when(Math.max(...rows.map(r=>r.ts)))),
+            open:()=>{ if(name!==t.noProject) this.setMeta('project',name);
+              this.setState({view:'records',listMode:'records',filter:0,query:name===t.noProject?'':name}); }};
+        });
+      })(),
+      storageHeadline:mb.toFixed(1)+' MB · '+rec.length+' '+(rec.length===1?t.obsOne:t.obsMany),
+      storageDetail:t.storageDetail.replace('{p}',Math.min(2000,this.props.photoSize||1600)),
+      storagePct:Math.min(100,Math.round(mb/50*100))+'%',
+
+      exportCsv:()=>{
+        if(!rec.length){ this.say(t.nothingToExport); return; }
+        const cols=['occurrenceID','eventDate','scientificName','vernacularName','individualCount','decimalLatitude','decimalLongitude','geodeticDatum','coordinateUncertaintyInMeters','identificationVerificationStatus','substrate','associatedTaxa','habitat','recordedBy','datasetName','occurrenceRemarks'];
+        const en=T.en;
+        const rows=rec.map(r=>[r.id,new Date(r.ts).toISOString(),r.species,r.common||'',r.count,r.lat??'',r.lon??'','WGS84',r.acc?Math.round(r.acc):'',
+          en.conf[r.conf]||'',(r.subs||[]).map(i=>en.subs[i]).filter(Boolean).join('; '),en.hosts[r.host]||'',en.habs[r.habitat]||'',
+          r.observer||'',r.project||'',(r.notes||'').replace(/"/g,'""')]);
+        this.download('mycota-darwincore.csv',[cols.join(','),...rows.map(r=>r.map(v=>'"'+String(v)+'"').join(','))].join('\n'),'text/csv');
+        this.say(t.csvDone);
+      },
+      exportJson:()=>{
+        if(!rec.length){ this.say(t.nothingToExport); return; }
+        const en=T.en;
+        const fc={type:'FeatureCollection',features:rec.filter(r=>r.lat!=null).map(r=>({type:'Feature',
+          geometry:{type:'Point',coordinates:[r.lon,r.lat]},
+          properties:{scientificName:r.species,vernacularName:r.common,eventDate:new Date(r.ts).toISOString(),individualCount:r.count,
+            accuracy:r.acc,identification:en.conf[r.conf],substrate:(r.subs||[]).map(i=>en.subs[i]),host:en.hosts[r.host],habitat:en.habs[r.habitat],
+            recordedBy:r.observer,datasetName:r.project,remarks:r.notes}}))};
+        this.download('mycota.geojson',JSON.stringify(fc,null,2),'application/geo+json');
+        this.say(t.geoDone);
+      },
+      exportBundle:()=>{
+        if(!rec.length){ this.say(t.nothingToExport); return; }
+        this.download('mycota-backup.json',JSON.stringify({app:'Mycota',version:2,exported:new Date().toISOString(),observer:st.observer,project:st.project,records:rec},null,1),'application/json');
+        this.say(t.backupDone);
+      },
+      onImport:async(e)=>{
+        const file=e.target.files&&e.target.files[0]; e.target.value='';
+        if(!file) return;
+        let data;
+        try{ data=JSON.parse(await file.text()); }catch(err){ this.say(t.unreadable); return; }
+        let incoming=[];
+        if(Array.isArray(data)) incoming=data;
+        else if(Array.isArray(data.records)) incoming=data.records;
+        else if(data.type==='FeatureCollection'&&Array.isArray(data.features)){
+          const en=T.en;
+          incoming=data.features.map((f,i)=>{const p=f.properties||{},c=(f.geometry||{}).coordinates||[];
+            return {id:Date.now()+i,ts:p.eventDate?Date.parse(p.eventDate):Date.now(),
+              species:p.scientificName||'',common:p.vernacularName||p.scientificName||'',
+              conf:Math.max(0,en.conf.indexOf(p.identification)),
+              subs:[],host:Math.max(0,en.hosts.indexOf(p.host)),habitat:Math.max(0,en.habs.indexOf(p.habitat)),
+              count:p.individualCount||1,notes:p.remarks||'',observer:p.recordedBy||'',project:p.datasetName||'',photos:[],
+              lat:c[1]??null,lon:c[0]??null,acc:p.accuracy??null};});
+        }
+        if(!incoming.length){ this.say(t.noRecordsIn); return; }
+        let added=0;
+        for(const r of incoming){
+          const rr={...r,id:r.id||Date.now()+added,ts:r.ts||Date.now()};
+          if(rec.some(x=>x.id===rr.id||(x.ts===rr.ts&&x.species===rr.species))) continue;
+          try{ await put(STORE,rr); added++; }catch(err){}
+        }
+        this.setState({records:(await all(STORE)).sort((a,b)=>b.ts-a.ts)});
+        this.say(added?t.imported.replace('{n}',added):t.nothingNew);
+      },
+      wipeLabel:st.armed==='wipe'?t.wipeSure:t.wipe,
+      wipeAll:async()=>{
+        if(st.armed!=='wipe'){ this.setState({armed:'wipe'}); return; }
+        await clearStore(STORE);
+        this.setState({records:[],armed:null,detailId:null});
+        this.say(t.wiped);
+      },
+
+      regionChips:[['all',t.regions.all],['eu',t.regions.eu],['na',t.regions.na],['sa',t.regions.sa],['af',t.regions.af],['as',t.regions.as],['oc',t.regions.oc]]
+        .map(([k,lab])=>({label:lab,bg:st.region===k?ACC:N2,fg:st.region===k?CREAM:N8,pick:()=>this.setState({region:k})})),
+      speciesCards:regionIdx.map(i=>{const s=sp(i);
+        return {common:s.cn,latin:s.ln,swatch:s.sw,tag:t.tags[s.tag],...tagCols(s.tag),season:this.seasonLabel(s.season),
+          mine:rec.filter(r=>r.species===s.ln).length+'×',open:()=>this.setState({view:'records',listMode:'species',openSpecies:i})};}),
+      speciesOpen:!!open, speciesClosed:!open, closeSpecies:()=>this.setState({openSpecies:null}),
+      openCommon:open?open.cn:'', openLatin:open?open.ln:'', openSwatch:open?open.sw:'none',
+      openTag:open?t.tags[open.tag]:'', openTagBg:open?tagCols(open.tag).tagBg:N2, openTagFg:open?tagCols(open.tag).tagFg:N8,
+      openSeason:open?this.seasonLabel(open.season):'',
+      openRegions:open?open.reg.map(r=>t.regions[r]).join(' · '):'',
+      openMine:open?t.ownFinds.replace('{n}',rec.filter(r=>r.species===open.ln).length):'',
+      openSections:open?[{title:t.sDesc,text:open.s[0]},{title:t.sEco,text:open.s[1]},{title:t.sRisk,text:open.s[2]}]:[],
+    };
+  }
+}
+
+</script>
+</body>
+</html>
