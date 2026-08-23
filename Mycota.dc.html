@@ -127,7 +127,7 @@
         <div style="display:flex;flex-direction:column;gap:9px">
           <sc-for list="{{ recentRecords }}" as="r" hint-placeholder-count="3">
             <button class="mv-tap" onClick="{{ r.open }}" style="width:100%;display:flex;gap:12px;align-items:center;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:11px 13px;box-shadow:var(--shadow-sm);text-align:left">
-              <span style="width:48px;height:48px;flex:none;border-radius:15px;background-color:var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ r.thumb }}"></span>
+              <span style="width:48px;height:48px;flex:none;border-radius:15px;background-color:var(--color-neutral-300);position:relative;overflow:hidden"><sc-if value="{{ r.hasThumb }}" hint-placeholder-val="{{ false }}"><img ref="{{ r.imgRef }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if></span>
               <span style="flex:1;min-width:0">
                 <span style="display:block;font:600 14px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span>
                 <span style="display:block;font-size:11.5px;color:var(--color-neutral-600);margin-top:4px">{{ r.meta }}</span>
@@ -196,7 +196,21 @@
   <!-- CAPTURE -->
   <sc-if value="{{ isNew }}">
     <div class="mv-scroll" style="padding:8px 20px 112px">
-      <div style="border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md);position:relative;height:250px;background-color:#4a4034;background-size:cover;background-position:center;background-image:{{ draftHero }}">
+      <div style="display:flex;gap:5px;margin-bottom:10px">
+        <sc-for list="{{ stepBars }}" as="b" hint-placeholder-count="5">
+          <span style="flex:1;height:5px;border-radius:999px;background:{{ b.bg }}"></span>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:16px">
+        <span style="font:400 21px/1.2 var(--font-heading)">{{ stepTitle }}</span>
+        <span style="font:600 11px/1 var(--font-body);color:var(--color-neutral-600);white-space:nowrap">{{ stepCounter }}</span>
+      </div>
+
+      <sc-if value="{{ step0 }}">
+      <div style="border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md);position:relative;height:250px;background-color:#4a4034">
+        <sc-if value="{{ draftHasPhoto }}" hint-placeholder-val="{{ false }}">
+          <img ref="{{ draftHeroRef }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+        </sc-if>
         <sc-if value="{{ draftNoPhoto }}">
           <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:rgba(253,246,234,.9)">
             <div style="width:112px;height:112px;border:2.75px dashed rgba(253,246,234,.5);border-radius:50%"></div>
@@ -206,13 +220,21 @@
       </div>
       <div class="mv-row" style="margin-top:10px">
         <sc-for list="{{ draftThumbs }}" as="t" hint-placeholder-count="1">
-          <button class="mv-tap" onClick="{{ t.remove }}" style="width:56px;height:56px;flex:none;border-radius:16px;border:2px solid var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ t.thumb }}"></button>
+          <button class="mv-tap" onClick="{{ t.remove }}" style="width:56px;height:56px;flex:none;border-radius:16px;border:2px solid var(--color-neutral-300);position:relative;overflow:hidden"><sc-if value="{{ t.has }}" hint-placeholder-val="{{ false }}"><img ref="{{ t.imgRef }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if></button>
         </sc-for>
-        <label style="width:56px;height:56px;flex:none;border-radius:16px;background:var(--color-accent);color:#fdf6ea;display:flex;align-items:center;justify-content:center;cursor:pointer;font:400 26px/1 var(--font-heading)">
-          +<input type="file" accept="image/*" capture="environment" multiple="{{ true }}" onChange="{{ onPhoto }}" style="display:none">
+      </div>
+      <div style="display:flex;gap:9px;margin-top:12px">
+        <label class="mv-tap" style="flex:2;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:999px;background:var(--color-accent);color:#fdf6ea;cursor:pointer;box-shadow:var(--shadow-md);font:400 16px/1 var(--font-heading)">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"></path><circle cx="12" cy="13" r="3.4"></circle></svg>
+          {{ tTakePhoto }}
+          <input type="file" accept="image/*" capture="environment" multiple="{{ true }}" onChange="{{ onPhoto }}" style="display:none">
+        </label>
+        <label class="mv-tap" style="flex:1;display:flex;align-items:center;justify-content:center;padding:15px;border-radius:999px;background:var(--color-neutral-200);color:var(--color-neutral-800);cursor:pointer;font:400 15px/1 var(--font-heading);text-align:center">
+          {{ tFromLibrary }}
+          <input type="file" accept="image/*" multiple="{{ true }}" onChange="{{ onPhoto }}" style="display:none">
         </label>
       </div>
-      <div style="font-size:11.5px;color:var(--color-neutral-600);margin-top:8px">{{ photoHint }}</div>
+      <div style="font-size:11.5px;color:var(--color-neutral-600);margin-top:10px">{{ photoHint }}</div>
 
       <div style="margin-top:16px;background:{{ fixBg }};border-radius:var(--radius-lg);padding:14px 16px;display:flex;gap:13px;align-items:center">
         <span style="width:44px;height:44px;flex:none;border-radius:var(--radius-md);background:{{ fixDotBg }}"></span>
@@ -222,8 +244,20 @@
         </span>
         <button class="mv-tap" onClick="{{ toggleGps }}" style="flex:none;padding:9px 12px;border-radius:999px;background:#fdf6ea;font:600 11.5px/1 var(--font-body);color:var(--color-accent-2-700);white-space:nowrap">{{ fixBtn }}</button>
       </div>
+      </sc-if>
 
-      <div class="mv-kicker" style="margin:20px 0 9px">{{ tSpeciesLabel }}</div>
+      <sc-if value="{{ step1 }}">
+      <sc-if value="{{ spCollapsed }}">
+        <button class="mv-tap" onClick="{{ openSpeciesPicker }}" style="width:100%;display:flex;gap:12px;align-items:center;text-align:left;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:12px;box-shadow:var(--shadow-sm);border:2px solid var(--color-accent)">
+          <span style="width:52px;height:52px;flex:none;border-radius:15px;position:relative;overflow:hidden;background:{{ pickedSwatch }}"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font:400 16px/1.15 var(--font-heading)">{{ pickedCommon }}</span>
+            <span style="display:block;font-size:11.5px;font-style:italic;color:var(--color-neutral-600);margin-top:4px">{{ pickedLatin }}</span>
+          </span>
+          <span style="flex:none;padding:8px 12px;border-radius:999px;background:var(--color-neutral-200);font:600 11px/1 var(--font-body)">{{ tChange }}</span>
+        </button>
+      </sc-if>
+      <sc-if value="{{ spExpanded }}">
       <input class="mv-input" value="{{ speciesQuery }}" onInput="{{ onSpeciesQuery }}" placeholder="{{ tSearchSpecies }}" style="margin-bottom:9px">
       <div style="display:flex;flex-direction:column;gap:8px">
         <sc-for list="{{ speciesOptions }}" as="s" hint-placeholder-count="4">
@@ -240,6 +274,7 @@
       <sc-if value="{{ noSpeciesMatch }}">
         <div style="font-size:12.5px;line-height:1.6;color:var(--color-neutral-700);padding:4px 2px">{{ tNoSpeciesMatch }}</div>
       </sc-if>
+      </sc-if>
 
       <div class="mv-kicker" style="margin:20px 0 9px">{{ tConfidence }}</div>
       <div style="display:flex;gap:7px">
@@ -248,7 +283,10 @@
         </sc-for>
       </div>
 
-      <div class="mv-kicker" style="margin:20px 0 9px">{{ tSubstrate }}</div>
+      </sc-if>
+
+      <sc-if value="{{ step2 }}">
+      <div class="mv-kicker" style="margin:0 0 9px">{{ tSubstrate }}</div>
       <div style="display:flex;flex-wrap:wrap;gap:7px">
         <sc-for list="{{ substrateOptions }}" as="s" hint-placeholder-count="6">
           <button class="mv-tap" onClick="{{ s.toggle }}" style="padding:9px 13px;border-radius:999px;font:600 12.5px/1 var(--font-body);background:{{ s.bg }};color:{{ s.fg }};box-shadow:var(--shadow-sm)">{{ s.label }}</button>
@@ -269,7 +307,9 @@
         </select>
       </div>
 
-      <div class="mv-kicker" style="margin:20px 0 9px">{{ tCount }}</div>
+      </sc-if>
+
+      <sc-if value="{{ step3 }}">
       <div style="display:flex;align-items:center;gap:14px;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:12px 16px;box-shadow:var(--shadow-sm)">
         <button class="mv-tap" onClick="{{ decCount }}" style="width:44px;height:44px;flex:none;border-radius:999px;background:var(--color-neutral-200);font:400 22px/1 var(--font-heading);display:flex;align-items:center;justify-content:center">–</button>
         <div style="flex:1;text-align:center">
@@ -281,12 +321,38 @@
 
       <div class="mv-kicker" style="margin:20px 0 9px">{{ tNotes }}</div>
       <textarea onInput="{{ onNotes }}" value="{{ draftNotes }}" placeholder="{{ tNotesPlaceholder }}" style="width:100%;box-sizing:border-box;min-height:92px;padding:13px;border-radius:var(--radius-md);border:1px solid var(--color-divider);background:var(--color-neutral-100);font:400 14px/1.5 var(--font-body);color:var(--color-text);resize:vertical"></textarea>
+      </sc-if>
 
-      <div style="display:flex;gap:9px;margin-top:16px">
-        <button class="mv-tap" onClick="{{ cancelDraft }}" style="flex:1;padding:15px;border-radius:999px;background:var(--color-neutral-200);font:400 15px/1 var(--font-heading);text-align:center">{{ tDiscard }}</button>
-        <button class="mv-tap" onClick="{{ saveDraft }}" style="flex:2;padding:15px;border-radius:999px;background:{{ saveBg }};color:{{ saveFg }};font:400 16px/1 var(--font-heading);text-align:center;box-shadow:var(--shadow-md)">{{ saveLabel }}</button>
+      <sc-if value="{{ step4 }}">
+      <div style="display:flex;gap:12px;align-items:center;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:12px;box-shadow:var(--shadow-sm)">
+        <span style="width:62px;height:62px;flex:none;border-radius:17px;overflow:hidden;background:{{ pickedSwatch }}">
+          <sc-if value="{{ draftHasPhoto }}" hint-placeholder-val="{{ false }}">
+            <img ref="{{ draftHeroRef }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+          </sc-if>
+        </span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font:400 17px/1.15 var(--font-heading)">{{ reviewCommon }}</span>
+          <span style="display:block;font-size:11.5px;font-style:italic;color:var(--color-neutral-600);margin-top:4px">{{ reviewLatin }}</span>
+        </span>
       </div>
+      <div style="display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-md);overflow:hidden;margin-top:12px">
+        <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="6">
+          <button class="mv-tap" onClick="{{ r.edit }}" style="width:100%;display:flex;gap:12px;text-align:left;background:var(--color-neutral-100);padding:11px 13px">
+            <span style="flex:none;width:96px;font:600 11.5px/1.45 var(--font-body);color:var(--color-neutral-600)">{{ r.label }}</span>
+            <span style="flex:1;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800);text-wrap:pretty">{{ r.value }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <button class="mv-tap" onClick="{{ saveDraft }}" style="width:100%;margin-top:16px;padding:16px;border-radius:999px;background:{{ saveBg }};color:{{ saveFg }};font:400 16px/1 var(--font-heading);text-align:center;box-shadow:var(--shadow-md)">{{ saveLabel }}</button>
       <div style="font-size:11.5px;line-height:1.55;color:var(--color-neutral-600);margin-top:10px">{{ saveHint }}</div>
+      </sc-if>
+
+      <div style="display:flex;gap:9px;margin-top:20px">
+        <button class="mv-tap" onClick="{{ stepBack }}" style="flex:1;padding:15px;border-radius:999px;background:var(--color-neutral-200);font:400 15px/1 var(--font-heading);text-align:center">{{ stepBackLabel }}</button>
+        <sc-if value="{{ stepHasNext }}">
+          <button class="mv-tap" onClick="{{ stepNext }}" style="flex:2;padding:15px;border-radius:999px;background:var(--color-accent);color:#fdf6ea;font:400 16px/1 var(--font-heading);text-align:center;box-shadow:var(--shadow-md)">{{ tStepNext }}</button>
+        </sc-if>
+      </div>
     </div>
   </sc-if>
 
@@ -308,7 +374,7 @@
         <sc-for list="{{ filteredRecords }}" as="r" hint-placeholder-count="3">
           <button class="mv-tap" onClick="{{ r.open }}" style="width:100%;text-align:left;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:12px;box-shadow:var(--shadow-sm)">
             <span style="display:flex;gap:12px;align-items:center">
-              <span style="width:56px;height:56px;flex:none;border-radius:17px;background-color:var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ r.thumb }}"></span>
+              <span style="width:56px;height:56px;flex:none;border-radius:17px;background-color:var(--color-neutral-300);position:relative;overflow:hidden"><sc-if value="{{ r.hasThumb }}" hint-placeholder-val="{{ false }}"><img ref="{{ r.imgRef }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if></span>
               <span style="flex:1;min-width:0">
                 <span style="display:block;font:400 16px/1.15 var(--font-heading)">{{ r.title }}</span>
                 <span style="display:block;font-size:11.5px;color:var(--color-neutral-600);margin-top:4px">{{ r.meta }}</span>
@@ -329,10 +395,10 @@
   <sc-if value="{{ isDetail }}">
     <div class="mv-scroll" style="padding:8px 20px 112px">
       <button class="mv-tap" onClick="{{ goRecords }}" style="padding:9px 13px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body);margin-bottom:14px">{{ tBackToList }}</button>
-      <div style="height:250px;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);background-color:var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ detailHero }}"></div>
+      <div style="height:250px;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);background-color:var(--color-neutral-300);position:relative;overflow:hidden"><sc-if value="{{ detailHasPhoto }}" hint-placeholder-val="{{ false }}"><img ref="{{ detailHeroRef }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if></div>
       <div class="mv-row" style="margin-top:10px">
         <sc-for list="{{ detailThumbs }}" as="t" hint-placeholder-count="2">
-          <span style="width:56px;height:56px;flex:none;border-radius:16px;background-color:var(--color-neutral-300);background-size:cover;background-position:center;background-image:{{ t.thumb }}"></span>
+          <span style="width:56px;height:56px;flex:none;border-radius:16px;background-color:var(--color-neutral-300);position:relative;overflow:hidden"><sc-if value="{{ t.has }}" hint-placeholder-val="{{ false }}"><img ref="{{ t.imgRef }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if></span>
         </sc-for>
       </div>
       <h3 style="font-size:24px;margin:18px 0 4px">{{ detailCommon }}</h3>
@@ -358,6 +424,9 @@
       <sc-if value="{{ speciesOpen }}">
         <button class="mv-tap" onClick="{{ closeSpecies }}" style="padding:9px 13px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body);margin-bottom:14px">{{ tBackToSpecies }}</button>
         <div style="height:180px;border-radius:var(--radius-lg);background:{{ openSwatch }}"></div>
+        <sc-if value="{{ openHasPhoto }}">
+          <a href="{{ openPhotoPage }}" target="_blank" style="display:block;margin-top:7px;font-size:10.5px;color:var(--color-neutral-600);text-decoration:none">{{ tPhotoCredit }}</a>
+        </sc-if>
         <h3 style="font-size:25px;margin:16px 0 4px">{{ openCommon }}</h3>
         <div style="font-size:13.5px;font-style:italic;color:var(--color-neutral-600)">{{ openLatin }}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
@@ -365,6 +434,30 @@
           <span style="padding:5px 11px;border-radius:999px;background:var(--color-neutral-200);color:var(--color-neutral-800);font:600 11.5px/1.3 var(--font-body)">{{ openSeason }}</span>
           <span style="padding:5px 11px;border-radius:999px;background:var(--color-accent-2-100);color:var(--color-accent-2-800);font:600 11.5px/1.3 var(--font-body)">{{ openRegions }}</span>
           <span style="padding:5px 11px;border-radius:999px;background:var(--color-neutral-200);color:var(--color-neutral-800);font:600 11.5px/1.3 var(--font-body)">{{ openMine }}</span>
+        </div>
+        <div style="margin-top:22px">
+          <h4 style="font-size:16px;margin:0 0 9px">{{ tHealthTitle }}</h4>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:11px;background:var(--color-accent-2-100);border-radius:var(--radius-md);padding:12px 14px">
+              <span style="flex:none;width:48px;font:600 11px/1.45 var(--font-body);color:var(--color-accent-2-800)">{{ tHealthPos }}</span>
+              <span style="flex:1;font-size:12.5px;line-height:1.55;color:var(--color-accent-2-800);text-wrap:pretty">{{ openHealthPos }}</span>
+            </div>
+            <div style="display:flex;gap:11px;background:var(--color-accent-100);border-radius:var(--radius-md);padding:12px 14px">
+              <span style="flex:none;width:48px;font:600 11px/1.45 var(--font-body);color:var(--color-accent-800)">{{ tHealthNeg }}</span>
+              <span style="flex:1;font-size:12.5px;line-height:1.55;color:var(--color-accent-800);text-wrap:pretty">{{ openHealthNeg }}</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:22px">
+          <h4 style="font-size:16px;margin:0 0 9px">{{ tFieldTitle }}</h4>
+          <div style="display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-md);overflow:hidden">
+            <sc-for list="{{ openField }}" as="f" hint-placeholder-count="6">
+              <div style="display:flex;gap:12px;background:var(--color-neutral-100);padding:10px 13px">
+                <span style="flex:none;width:88px;font:600 11.5px/1.45 var(--font-body);color:var(--color-neutral-600)">{{ f.label }}</span>
+                <span style="flex:1;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800);text-wrap:pretty">{{ f.value }}</span>
+              </div>
+            </sc-for>
+          </div>
         </div>
         <sc-for list="{{ openSections }}" as="s" hint-placeholder-count="3">
           <div style="margin-top:20px">
@@ -374,6 +467,103 @@
         </sc-for>
         <div style="margin-top:20px;background:var(--color-accent-100);border-radius:var(--radius-lg);padding:14px 16px;font-size:12.5px;line-height:1.6;color:var(--color-accent-800)">{{ tIdWarning }}</div>
         <button class="mv-tap" onClick="{{ startDraftHere }}" style="width:100%;margin-top:16px;padding:15px;border-radius:999px;background:var(--color-accent);color:#fdf6ea;font:400 16px/1 var(--font-heading);text-align:center">{{ tRecordThisSpecies }}</button>
+      </sc-if>
+      <sc-if value="{{ keyOpen }}">
+        <button class="mv-tap" onClick="{{ closeKey }}" style="padding:9px 13px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body);margin-bottom:14px">{{ tBackToSpecies }}</button>
+        <h3 style="font-size:24px;margin:0 0 6px">{{ tKeyTitle }}</h3>
+        <p style="margin:0 0 14px;font-size:12.5px;line-height:1.6;color:var(--color-neutral-700)">{{ tKeyBlurb }}</p>
+        <div style="display:flex;gap:6px;padding:4px;border-radius:999px;background:var(--color-neutral-200);margin-bottom:18px">
+          <sc-for list="{{ keyModes }}" as="m" hint-placeholder-count="2">
+            <button class="mv-tap" onClick="{{ m.pick }}" style="flex:1;text-align:center;padding:10px 6px;border-radius:999px;font:600 12.5px/1.2 var(--font-body);background:{{ m.bg }};color:{{ m.fg }}">{{ m.label }}</button>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ keySteps }}">
+          <div class="mv-row" style="margin-bottom:12px">
+            <sc-for list="{{ keyTrail }}" as="c" hint-placeholder-count="1">
+              <button class="mv-tap" onClick="{{ c.back }}" style="flex:none;max-width:100%;padding:8px 12px;border-radius:999px;background:var(--color-accent-2-100);color:var(--color-accent-2-800);font:600 11px/1.3 var(--font-body);text-align:left">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ keyAsking }}">
+            <div style="font:400 19px/1.25 var(--font-heading);margin-bottom:12px">{{ keyQuestion }}</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ keyOpts }}" as="o" hint-placeholder-count="4">
+                <button class="mv-tap" onClick="{{ o.pick }}" style="width:100%;display:flex;gap:12px;align-items:center;text-align:left;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:12px;box-shadow:var(--shadow-sm)">
+                  <span style="width:42px;height:42px;flex:none;background:{{ o.sil }}"></span>
+                  <span style="flex:1;font:600 13px/1.4 var(--font-body);text-wrap:pretty">{{ o.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ keyDone }}">
+            <div style="font:600 12px/1.3 var(--font-body);color:var(--color-neutral-700);margin-bottom:9px">{{ tKeyResult }}</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ keyEndResults }}" as="r" hint-placeholder-count="1">
+                <button class="mv-tap" onClick="{{ r.open }}" style="width:100%;display:flex;gap:12px;align-items:center;text-align:left;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:10px 12px;box-shadow:var(--shadow-sm)">
+                  <span style="width:52px;height:52px;flex:none;border-radius:15px;background:{{ r.swatch }}"></span>
+                  <span style="flex:1;min-width:0">
+                    <span style="display:block;font:400 15px/1.2 var(--font-heading)">{{ r.common }}</span>
+                    <span style="display:block;font-size:11px;font-style:italic;color:var(--color-neutral-600);margin-top:3px">{{ r.latin }}</span>
+                  </span>
+                  <span style="flex:none;padding:4px 9px;border-radius:999px;background:{{ r.tagBg }};color:{{ r.tagFg }};font:600 10px/1.3 var(--font-body)">{{ r.tag }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <p style="margin:12px 0 0;font-size:12.5px;line-height:1.6;color:var(--color-neutral-700)">{{ tKeyEndNote }}</p>
+          </sc-if>
+          <div class="mv-row" style="margin-top:16px">
+            <button class="mv-tap" onClick="{{ keyStepBack }}" style="flex:none;padding:10px 14px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body)">{{ tKeyStepBack }}</button>
+            <button class="mv-tap" onClick="{{ keyRestart }}" style="flex:none;padding:10px 14px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body)">{{ tKeyRestart }}</button>
+          </div>
+          <div style="margin-top:18px;background:var(--color-accent-100);border-radius:var(--radius-lg);padding:14px 16px;font-size:12.5px;line-height:1.6;color:var(--color-accent-800)">{{ tKeyNote }}</div>
+        </sc-if>
+
+        <sc-if value="{{ keyFilter }}">
+        <div style="font:600 12px/1.3 var(--font-body);color:var(--color-neutral-700);margin-bottom:9px">{{ tKeyQ1 }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+          <sc-for list="{{ keyShapes }}" as="k" hint-placeholder-count="12">
+            <button class="mv-tap" onClick="{{ k.pick }}" style="padding:6px 3px 8px;border-radius:var(--radius-md);background:{{ k.bg }};border:2px solid {{ k.border }};display:flex;flex-direction:column;align-items:center;gap:4px">
+              <span style="width:100%;height:44px;background:{{ k.sil }}"></span>
+              <span style="font:600 8.5px/1.15 var(--font-body);color:{{ k.fg }};text-align:center">{{ k.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="font:600 12px/1.3 var(--font-body);color:var(--color-neutral-700);margin:20px 0 9px">{{ tKeyQ2 }}</div>
+        <div class="mv-row">
+          <sc-for list="{{ keySubs }}" as="k" hint-placeholder-count="4">
+            <button class="mv-tap" onClick="{{ k.pick }}" style="flex:none;padding:10px 14px;border-radius:999px;font:600 12px/1 var(--font-body);background:{{ k.bg }};color:{{ k.fg }}">{{ k.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="font:600 12px/1.3 var(--font-body);color:var(--color-neutral-700);margin:20px 0 9px">{{ tKeyQ3 }}</div>
+        <div class="mv-row">
+          <sc-for list="{{ keyHyms }}" as="k" hint-placeholder-count="5">
+            <button class="mv-tap" onClick="{{ k.pick }}" style="flex:none;padding:10px 14px;border-radius:999px;font:600 12px/1 var(--font-body);background:{{ k.bg }};color:{{ k.fg }}">{{ k.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 10px">
+          <span style="font:400 17px/1.2 var(--font-heading)">{{ keyCount }}</span>
+          <button class="mv-tap" onClick="{{ resetKey }}" style="padding:9px 13px;border-radius:999px;background:var(--color-neutral-200);font:600 11.5px/1 var(--font-body)">{{ tKeyReset }}</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ keyResults }}" as="r" hint-placeholder-count="3">
+            <button class="mv-tap" onClick="{{ r.open }}" style="width:100%;display:flex;gap:12px;align-items:center;text-align:left;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:10px 12px;box-shadow:var(--shadow-sm)">
+              <span style="width:46px;height:46px;flex:none;border-radius:14px;background:{{ r.swatch }}"></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:600 13.5px/1.2 var(--font-body)">{{ r.common }}</span>
+                <span style="display:block;font-size:11px;font-style:italic;color:var(--color-neutral-600);margin-top:3px">{{ r.latin }}</span>
+              </span>
+              <span style="flex:none;padding:4px 9px;border-radius:999px;background:{{ r.tagBg }};color:{{ r.tagFg }};font:600 10px/1.3 var(--font-body)">{{ r.tag }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ keyEmpty }}">
+          <p style="margin:6px 0 0;font-size:12.5px;line-height:1.6;color:var(--color-neutral-700)">{{ tKeyNone }}</p>
+        </sc-if>
+        <div style="margin-top:18px;background:var(--color-accent-100);border-radius:var(--radius-lg);padding:14px 16px;font-size:12.5px;line-height:1.6;color:var(--color-accent-800)">{{ tKeyNote }}</div>
+        </sc-if>
       </sc-if>
       <sc-if value="{{ speciesClosed }}">
         <div style="display:flex;gap:6px;padding:4px;border-radius:999px;background:var(--color-neutral-200);margin-bottom:12px">
@@ -386,6 +576,13 @@
             <button class="mv-tap" onClick="{{ c.pick }}" style="flex:none;padding:9px 13px;border-radius:999px;font:600 12px/1 var(--font-body);background:{{ c.bg }};color:{{ c.fg }}">{{ c.label }}</button>
           </sc-for>
         </div>
+        <button class="mv-tap" onClick="{{ openKey }}" style="width:100%;display:flex;gap:12px;align-items:center;text-align:left;background:var(--color-accent-100);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px">
+          <span style="width:44px;height:44px;flex:none;background:{{ keyIcon }}"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font:400 16px/1.15 var(--font-heading);color:var(--color-accent-800)">{{ tKeyOpen }}</span>
+            <span style="display:block;font-size:11.5px;line-height:1.45;color:var(--color-accent-800);opacity:.8;margin-top:3px">{{ tKeyBlurb }}</span>
+          </span>
+        </button>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
           <sc-for list="{{ speciesCards }}" as="s" hint-placeholder-count="4">
             <button class="mv-tap" onClick="{{ s.open }}" style="text-align:left;background:var(--color-neutral-100);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden">
@@ -509,7 +706,7 @@ const T={
     gpsOff:'GPS off',gpsSearch:'searching…',gpsDenied:'Location denied',gpsNone:'No location on this device',noFix:'No fix',searchingSats:'Searching satellites…',accLive:'Accuracy ±{a} m · live',turnOn:'Turn on',again:'Again',
     myPosition:'My position',recordHere:'Record here',onlyFinds:'My finds only',chance:'chance of fruiting',chancePrefix:'Chance',dry:'Dry',normal:'Normal',wet:'Wet',
     predNoSites:'No finds with a location yet — the chance layer draws as soon as there are places on the map.',
-    photoAngles:'cap from above · gills · stem base',photoHintNone:'Take at least one photo — cap, gills and stem base give the best identification.',
+    photoAngles:'cap from above · gills · stem base',photoHintNone:'Photos are optional — cap, gills and stem base give the best identification.',
     photoHintSome:'Tap a photo to remove it · {n} of 3',maxPhotos:'Three photos per find is the maximum.',
     speciesLabel:'Species',searchSpecies:'Search common or scientific name',
     noSpeciesMatch:'No species in the list. Pick a related one and write the doubt into the field note — identification can be completed on the desktop.',
@@ -523,6 +720,21 @@ const T={
     notRecorded:'not recorded',notFilled:'not filled in',complete:'Complete',del:'Delete',sure:'Sure?',deleted:'Observation deleted.',
     sDesc:'Description',sEco:'Ecology',sRisk:'Risk & confusion',ownFinds:'{n} own finds',recordThis:'Record a find of this species',
     idWarning:'A reference profile, not a determination. Never eat a find on an app identification alone — check with a local key or an expert.',
+    photoCredit:'Photograph via Wikipedia · free licence',
+    change:'Change',takePhoto:'Take a photo',fromLibrary:'Library',
+    steps:['Photograph','Species','Habitat','Abundance','Check'],stepOf:'Step {n} of {t}',stepNext:'Next',stepPrev:'Back',
+    reviewNotesEmpty:'no field note',
+    healthTitle:'Health effects',healthPos:'Benefit',healthNeg:'Risk',healthNoPos:'No benefit recorded — this species is not eaten.',
+    fieldTitle:'Field characters',fieldLabels:['Cap','Underside','Stem','Flesh & smell','Spore print','Confusion'],
+    key:{modes:['Stepped key','Filter'],stepBack:'One step back',restart:'Start again',result:'Leads to',
+      endNote:'Compare the field characters below before you settle on a name.',
+      open:'Identification key',blurb:'Work down the stepped key, or filter by silhouette, substrate and underside.',title:'Identification key',
+      q1:'1 · Overall silhouette',q2:'2 · Where it grows',q3:'3 · Underside of the cap',any:'Any',reset:'Start over',
+      subs:{ground:'Soil & litter',grass:'Grass & dung',wood:'On wood'},
+      hym:{gills:'Gills',pores:'Pores',ridges:'Ridges',smooth:'Smooth / none'},
+      shapes:{convex:'Convex cap',parasol:'Parasol',conical:'Conical bell',cylindric:'Cylindric',bolete:'Bolete',funnel:'Funnel',oyster:'Oyster shelf',bracket:'Bracket',ear:'Ear / jelly',puffball:'Puffball',stinkhorn:'Stinkhorn',tuft:'Tufted cluster'},
+      count:'{n} species match',none:'No species in this region matches that combination.',
+      note:'A silhouette key sorts candidates — it never confirms a species. Check the full profile before you decide.'},
     regions:{all:'Worldwide',eu:'Europe',na:'North America',sa:'South America',af:'Africa',as:'Asia',oc:'Oceania'},
     back:'Back',language:'Language',observer:'Observer',observerPh:'Name or initials',project:'Project',projectPh:'e.g. Ridge survey 2026',
     observerNote:'Observer and project are written into every new observation and travel with the export.',
@@ -563,7 +775,7 @@ const T={
     gpsOff:'GPS uit',gpsSearch:'zoekt…',gpsDenied:'Locatie geweigerd',gpsNone:'Dit toestel geeft geen locatie',noFix:'Geen fix',searchingSats:'Zoekt satellieten…',accLive:'Nauwkeurigheid ±{a} m · live',turnOn:'Aanzetten',again:'Opnieuw',
     myPosition:'Naar mijn positie',recordHere:'Hier vastleggen',onlyFinds:'Alleen eigen vondsten',chance:'kans op vruchtlichamen',chancePrefix:'Kans',dry:'Droog',normal:'Normaal',wet:'Nat',
     predNoSites:'Nog geen vondsten met locatie — de kans wordt getekend zodra er plekken op de kaart staan.',
-    photoAngles:'hoed van bovenaf · lamellen · voet',photoHintNone:'Maak minstens één foto — hoed, lamellen en voet geven de beste determinatie.',
+    photoAngles:'hoed van bovenaf · lamellen · voet',photoHintNone:'Foto\u2019s zijn optioneel — hoed, lamellen en voet geven de beste determinatie.',
     photoHintSome:'Tik een foto aan om hem te verwijderen · {n} van 3',maxPhotos:'Maximaal drie foto\u2019s per vondst.',
     speciesLabel:'Soort',searchSpecies:'Zoek op naam of Latijnse naam',
     noSpeciesMatch:'Geen soort in de lijst. Kies een verwante soort en schrijf de twijfel in de veldnotitie — de determinatie kan op de desktop worden aangevuld.',
@@ -577,6 +789,21 @@ const T={
     notRecorded:'niet vastgelegd',notFilled:'niet ingevuld',complete:'Aanvullen',del:'Wissen',sure:'Zeker?',deleted:'Waarneming gewist.',
     sDesc:'Beschrijving',sEco:'Ecologie',sRisk:'Risico & verwarring',ownFinds:'{n} eigen vondsten',recordThis:'Vondst van deze soort vastleggen',
     idWarning:'Een naslagprofiel, geen determinatie. Eet nooit een vondst op basis van een app alleen — controleer met een lokale sleutel of een kenner.',
+    photoCredit:'Foto via Wikipedia · vrije licentie',
+    change:'Wijzig',takePhoto:'Foto maken',fromLibrary:'Bibliotheek',
+    steps:['Foto','Soort','Standplaats','Aantal','Controle'],stepOf:'Stap {n} van {t}',stepNext:'Volgende',stepPrev:'Terug',
+    reviewNotesEmpty:'geen veldnotitie',
+    healthTitle:'Effecten op de gezondheid',healthPos:'Baat',healthNeg:'Risico',healthNoPos:'Geen baat bekend — deze soort wordt niet gegeten.',
+    fieldTitle:'Veldkenmerken',fieldLabels:['Hoed','Onderzijde','Steel','Vlees & geur','Sporenprint','Verwarring'],
+    key:{modes:['Stapsleutel','Filter'],stepBack:'Eén stap terug',restart:'Opnieuw beginnen',result:'Leidt naar',
+      endNote:'Vergelijk de veldkenmerken hieronder voordat je een naam vaststelt.',
+      open:'Determinatiesleutel',blurb:'Werk de stapsleutel af, of filter op silhouet, substraat en onderzijde.',title:'Determinatiesleutel',
+      q1:'1 · Algemeen silhouet',q2:'2 · Waar het groeit',q3:'3 · Onderzijde van de hoed',any:'Alle',reset:'Opnieuw',
+      subs:{ground:'Bodem & strooisel',grass:'Gras & mest',wood:'Op hout'},
+      hym:{gills:'Lamellen',pores:'Poriën',ridges:'Ribben',smooth:'Glad / geen'},
+      shapes:{convex:'Bolle hoed',parasol:'Parasol',conical:'Kegelvormig',cylindric:'Cilindrisch',bolete:'Boleet',funnel:'Trechter',oyster:'Oesterconsole',bracket:'Console',ear:'Oor / trilzwam',puffball:'Bovist',stinkhorn:'Stinkzwam',tuft:'Bundel'},
+      count:'{n} soorten passen',none:'Geen soort in deze regio past bij deze combinatie.',
+      note:'Een silhouetsleutel sorteert kandidaten — het bevestigt nooit een soort. Controleer het volledige profiel voordat je beslist.'},
     regions:{all:'Wereldwijd',eu:'Europa',na:'Noord-Amerika',sa:'Zuid-Amerika',af:'Afrika',as:'Azië',oc:'Oceanië'},
     back:'Terug',language:'Taal',observer:'Waarnemer',observerPh:'Naam of initialen',project:'Project',projectPh:'Bijv. Kartering Veluwezoom 2026',
     observerNote:'Waarnemer en project worden bij elke nieuwe waarneming meegeschreven en komen mee in de export.',
@@ -611,6 +838,169 @@ const T={
     fruitingNow:'Nu in vruchtvorming',noFruiting:'Niets in seizoen bij dit vochtniveau. Verzet de maand op de kaart om vooruit te kijken.',
     fruitingBasis:'{m} · {v}',
     predBasisOwn:'{n} eigen vondsten van deze soort',predBasisNone:'nog geen eigen vondsten van deze soort'},
+};
+
+const SIL={
+ convex:'M10 55C10 21 90 21 90 55C68 63 32 63 10 55Z M42 56h16c0 15 2 27 4 35h-24c2-8 4-20 4-35z',
+ parasol:'M6 53C22 30 33 25 50 25C67 25 78 30 94 53C70 59 30 59 6 53Z M46 54h8c0 21 1 31 3 38h-14c2-7 3-17 3-38z M35 63h30a4 4 0 0 1 0 7H35a4 4 0 0 1 0-7z M40 88h20c1 4-2 6-10 6s-11-2-10-6z',
+ conical:'M50 8C66 26 75 44 78 60C66 66 34 66 22 60C25 44 34 26 50 8Z M45 62h10c0 16 1 24 2 30H43c1-6 2-14 2-30z',
+ cylindric:'M34 24C34 13 66 13 66 24C66 46 62 59 58 65H42C38 59 34 46 34 24Z M45 65h10v27H45z',
+ bolete:'M11 50C11 19 89 19 89 50C66 61 34 61 11 50Z M39 52C34 66 31 78 33 92h34c2-14-1-26-6-40z',
+ funnel:'M8 34C26 30 40 44 50 44C60 44 74 30 92 34C84 57 66 66 57 70H43C34 66 16 57 8 34Z M42 70h16c-1 13-2 20-4 24h-8c-2-4-3-11-4-24z',
+ oyster:'M90 27C60 23 28 32 12 50C28 68 60 77 90 73C79 60 79 40 90 27Z M12 50C6 53 3 58 1 63C9 62 15 57 19 54Z',
+ bracket:'M6 6h16v88H6z M22 28C50 24 82 32 94 46C74 58 44 58 22 50Z M22 64C44 61 68 66 80 74C64 82 40 82 22 74Z',
+ ear:'M52 10C77 10 91 32 87 55C83 77 63 90 46 88C35 87 30 78 37 71C48 60 57 55 57 45C57 37 48 33 40 38C29 44 22 34 29 25C34 15 43 10 52 10Z',
+ puffball:'M50 16C73 16 88 36 88 56C88 74 71 84 50 84C29 84 12 74 12 56C12 36 27 16 50 16Z M30 84h40c-2 6-14 8-20 8s-18-2-20-8z',
+ stinkhorn:'M50 9C63 9 72 20 72 31C72 42 63 51 59 55H41C37 51 28 42 28 31C28 20 37 9 50 9Z M42 55C39 70 39 79 41 86h18c2-7 2-16-1-31z M30 84C30 77 70 77 70 84C70 93 30 93 30 84Z',
+ tuft:'M6 46C6 29 40 29 40 46C29 52 17 52 6 46Z M19 47h9l4 38H15z M31 33C31 14 71 14 71 33C58 40 44 40 31 33Z M45 35h11l4 50H41z M61 53C61 38 94 38 94 53C83 59 72 59 61 53Z M73 54h9l3 31H70z'
+};
+const silUrl=(k,col,op)=>'url("data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g fill="'+col+'" fill-opacity="'+op+'">'+(SIL[k]||SIL.convex).split(' M').map((p,i)=>'<path d="'+(i?'M':'')+p+'"/>').join('')+'</g></svg>')+'")';
+const MOR={
+ 'Amanita muscaria':['convex','ground','gills'],'Amanita phalloides':['convex','ground','gills'],
+ 'Amanita pantherina':['convex','ground','gills'],'Amanita rubescens':['convex','ground','gills'],
+ 'Boletus edulis':['bolete','ground','pores'],'Leccinum scabrum':['bolete','ground','pores'],
+ 'Cantharellus cibarius':['funnel','ground','ridges'],'Macrolepiota procera':['parasol','grass','gills'],
+ 'Agaricus campestris':['convex','grass','gills'],'Chlorophyllum molybdites':['parasol','grass','gills'],
+ 'Omphalotus olearius':['funnel','wood','gills'],'Paxillus involutus':['funnel','ground','gills'],
+ 'Clitocybe nebularis':['funnel','ground','gills'],'Hypholoma fasciculare':['tuft','wood','gills'],
+ 'Pleurotus ostreatus':['oyster','wood','gills'],'Lentinula edodes':['convex','wood','gills'],
+ 'Trametes versicolor':['bracket','wood','pores'],'Ganoderma applanatum':['bracket','wood','pores'],
+ 'Auricularia auricula-judae':['ear','wood','smooth'],'Laetiporus sulphureus':['bracket','wood','pores'],
+ 'Flammulina velutipes':['tuft','wood','gills'],'Scleroderma citrinum':['puffball','ground','smooth'],
+ 'Phallus impudicus':['stinkhorn','ground','smooth'],'Coprinopsis atramentaria':['cylindric','ground','gills'],
+ 'Psilocybe semilanceata':['conical','grass','gills'],'Termitomyces titanicus':['parasol','ground','gills'],
+ 'Fomitopsis betulina':['bracket','wood','pores']
+};
+const morOf=ln=>MOR[ln]||['convex','ground','gills'];
+const SHAPES=['convex','parasol','conical','cylindric','bolete','funnel','oyster','bracket','ear','puffball','stinkhorn','tuft'];
+
+const FLD={
+'Amanita muscaria':{en:['Scarlet to orange, 8–20 cm, white pyramidal warts, margin faintly grooved','Free white gills, crowded','White, ringed, bulbous base with concentric scaly rings','White, unchanging; faint radish smell','White','A. caesarea (orange, yellow gills); faded caps taken for russulas'],
+ nl:['Scharlaken tot oranje, 8–20 cm, witte piramidevlokken, rand zwak gegroefd','Vrije witte lamellen, dicht opeen','Wit, met ring, knolvoet met gordels van vlokken','Wit, onveranderlijk; zwakke radijsgeur','Wit','A. caesarea (oranje, gele lamellen); verregende hoeden voor russula aangezien']},
+'Amanita phalloides':{en:['Olive to yellow-green, 5–15 cm, radial innate fibres, never warty','Free white gills, remaining white','White with a pendulous ring and a sac-like white volva','White; honey-sweet at first, sickly with age','White','Deadly for Agaricus and Volvariella — always uncover the stem base'],
+ nl:['Olijf- tot geelgroen, 5–15 cm, ingegroeide radiale vezels, nooit vlokkig','Vrije witte lamellen, blijvend wit','Wit met hangende ring en zakvormige witte beurs','Wit; eerst honingzoet, later weeïg','Wit','Dodelijk verward met champignon en Volvariella — leg altijd de steelvoet bloot']},
+'Amanita pantherina':{en:['Bistre to hazel-brown, pure white warts in rings, grooved margin','Free white gills','White, smooth ungrooved ring, sharply rimmed bulb','White, unchanging; faint radish smell','White','A. rubescens (flesh reddens) and A. excelsa (grooved ring)'],
+ nl:['Donker- tot hazelbruin, zuiver witte vlokken in kringen, gegroefde rand','Vrije witte lamellen','Wit, gladde ring zonder groeven, scherp gerande knol','Wit, onveranderlijk; zwakke radijsgeur','Wit','A. rubescens (vlees verkleurt rood) en A. excelsa (gegroefde ring)']},
+'Amanita rubescens':{en:['Dirty pink to red-brown, grey-pink warts, often insect-eaten','Free white gills, spotting red where damaged','Ringed, grooved above, base swollen; flesh reddens','Reddening within minutes of cutting — the decisive test','White','A. pantherina (never reddens) — the fatal confusion'],
+ nl:['Vuilroze tot roodbruin, grijsroze vlokken, vaak aangevreten','Vrije witte lamellen, roodvlekkend bij beschadiging','Geringd, boven gegroefd, voet gezwollen; vlees verkleurt rood','Binnen enkele minuten roodkleurend na snijden — de beslissende test','Wit','A. pantherina (verkleurt nooit) — de fatale verwisseling']},
+'Boletus edulis':{en:['Bread-brown, 8–25 cm, dry, margin whitish when young','Tubes and pores white, then cream, finally yellow-green','Stout, pale, swollen, with a fine white net on the upper half','White, not blueing; mild nutty taste','Olive-brown','Tylopilus felleus (pink pores, bitter); Boletus reticulatus'],
+ nl:['Broodbruin, 8–25 cm, droog, rand jong wittig','Buisjes en poriën wit, dan crème, ten slotte geelgroen','Stevig, bleek, gezwollen, met fijn wit net op de bovenhelft','Wit, niet blauwend; mild, nootachtig','Olijfbruin','Galgomphidius/Tylopilus felleus (roze poriën, bitter); B. reticulatus']},
+'Leccinum scabrum':{en:['Grey-brown to hazel, 5–15 cm, slightly greasy when wet','Whitish pores greying with age, bruising dull','Long, tapering, white with dark scabers in rows','Soft, white, barely changing; watery when old','Ochre-brown','Other Leccinum species — all mild, none dangerous'],
+ nl:['Grijsbruin tot hazelbruin, 5–15 cm, vochtig iets vettig','Wittige poriën, vaalgrijs wordend, dof vlekkend','Lang, taps, wit met donkere schubjes in rijen','Zacht, wit, nauwelijks verkleurend; oud waterig','Okerbruin','Andere Leccinum-soorten — alle mild, geen gevaarlijke']},
+'Cantharellus cibarius':{en:['Egg-yellow funnel, 3–10 cm, wavy inrolled margin','Thick blunt forking ridges running down the stem — not true gills','Same colour as the cap, solid, tapering downwards','Firm, pale yellow; clear smell of apricot','Pale yellow','Hygrophoropsis aurantiaca and Omphalotus (true thin gills)'],
+ nl:['Dooiergele trechter, 3–10 cm, golvende omgebogen rand','Dikke, stompe, gevorkte ribben die aflopen — geen echte lamellen','Zelfde kleur als de hoed, vol, naar onder versmald','Stevig, bleekgeel; duidelijke abrikozengeur','Bleekgeel','Valse hanenkam en Omphalotus (echte dunne lamellen)']},
+'Macrolepiota procera':{en:['To 30 cm, drumstick then flat, coarse brown scales, dark umbo','Free white gills, well clear of the stem','Tall, snakeskin-patterned, with a thick sliding double ring','White, unchanging; nutty','White','Chlorophyllum molybdites (green spores) and small Lepiota species'],
+ nl:['Tot 30 cm, eerst trommelstok, dan vlak, grove bruine schubben, donkere top','Vrije witte lamellen, ver van de steel','Hoog, slangenhuidpatroon, dikke verschuifbare dubbele ring','Wit, onveranderlijk; nootachtig','Wit','Groensporige parasolzwam (groene sporen) en kleine Lepiota-soorten']},
+'Agaricus campestris':{en:['White, 4–10 cm, dry, sometimes finely scaly, margin incurved','Bright pink gills turning chocolate-brown, free from the stem','Short, white, with a thin fragile ring; no bulb or volva','White, faintly reddening; pleasant mushroom smell','Chocolate-brown','Young Amanita phalloides and A. arvensis (yellowing)'],
+ nl:['Wit, 4–10 cm, droog, soms fijn schubbig, rand ingebogen','Helderroze lamellen die chocoladebruin worden, vrij van de steel','Kort, wit, met dunne broze ring; geen knol of beurs','Wit, zwak rood aanlopend; aangename champignongeur','Chocoladebruin','Jonge groene knolamaniet en A. arvensis (geelkleurend)']},
+'Chlorophyllum molybdites':{en:['White parasol to 30 cm with coarse buff scales','Gills white at first, dulling to grey-green as spores ripen','Ringed, smooth, base bulbous; flesh sometimes reddening','White to pinkish; mild smell','Dull green — the diagnostic character','Macrolepiota procera and Chlorophyllum rhacodes'],
+ nl:['Witte parasol tot 30 cm met grove okerkleurige schubben','Lamellen eerst wit, later grauw groengrijs als de sporen rijpen','Geringd, glad, voet knolvormig; vlees soms roodkleurend','Wit tot roze; milde geur','Dofgroen — het beslissende kenmerk','Grote parasolzwam en Chlorophyllum rhacodes']},
+'Omphalotus olearius':{en:['Deep orange funnel, 6–14 cm, in dense clumps','True thin gills running far down the stem; edges glow faintly','Orange, tapering, often curved, fused at the base','Orange, fibrous, bitter smell','Cream','Chanterelle (blunt ridges, on soil, apricot smell)'],
+ nl:['Diep oranje trechter, 6–14 cm, in dichte bundels','Echte dunne aflopende lamellen; randen lichten zwak op','Oranje, taps, vaak gebogen, aan de voet vergroeid','Oranje, vezelig, bittere geur','Crème','Hanenkam (stompe ribben, op de bodem, abrikozengeur)']},
+'Paxillus involutus':{en:['Olive-brown, 5–15 cm, depressed centre, long inrolled grooved rim','Decurrent yellow-brown gills that peel away and bruise red-brown','Short, stout, concolorous, staining brown at a touch','Yellowish, soft, bruising red-brown; sour smell','Ochre-brown','Once eaten widely — cumulative haemolytic poisoning, never safe'],
+ nl:['Olijfbruin, 5–15 cm, ingedrukt midden, lang ingerolde gegroefde rand','Aflopende geelbruine lamellen, afschuifbaar, roodbruin vlekkend','Kort, stevig, gelijkkleurig, bruin verkleurend bij aanraken','Geelachtig, zacht, roodbruin vlekkend; zure geur','Okerbruin','Vroeger veel gegeten — cumulatieve hemolytische vergiftiging, nooit veilig']},
+'Clitocybe nebularis':{en:['Grey, bloomed as if frosted, 8–20 cm, margin long inrolled','Cream decurrent gills, crowded, easily separated from the flesh','Stout, clavate, paler than the cap, base woolly','White, thick; strong sweetish mealy smell','Cream','Entoloma lividum and pale Clitocybe species'],
+ nl:['Grijs, als berijpt, 8–20 cm, rand lang ingerold','Crèmewitte aflopende lamellen, dicht, makkelijk los van het vlees','Stevig, knotsvormig, bleker dan de hoed, voet wollig','Wit, dik; sterke zoetige meelgeur','Crème','Giftige satijnzwam en bleke trechterzwammen']},
+'Hypholoma fasciculare':{en:['Sulphur-yellow with a browner centre, 2–6 cm, in dense tufts','Gills sulphur then green-yellow, finally purple-brown','Slender, yellow, curved, often fused in the tuft','Yellow, very bitter — a reliable field test','Purple-brown','Kuehneromyces mutabilis and Armillaria (both on wood)'],
+ nl:['Zwavelgeel met bruinere top, 2–6 cm, in dichte bundels','Lamellen zwavelgeel, dan groengeel, ten slotte purperbruin','Slank, geel, gebogen, vaak vergroeid in de bundel','Geel, zeer bitter — een betrouwbare veldtest','Purperbruin','Stobbenzwammetje en honingzwam (beide op hout)']},
+'Pleurotus ostreatus':{en:['Shell-shaped, 5–20 cm, grey-brown to blue-grey, tiered','White gills running far down the very short lateral stem','Short, off-centre or absent, white and woolly at the base','White, firm, mild; pleasant smell','White with a lilac tint','Pleurocybella porrigens (white, on conifer)'],
+ nl:['Schelpvormig, 5–20 cm, grijsbruin tot blauwgrijs, in etages','Witte lamellen die ver aflopen op de korte zijsteel','Kort, excentrisch of ontbrekend, wit en wollig aan de voet','Wit, stevig, mild; aangename geur','Wit met lila zweem','Warkruidzwam / Pleurocybella porrigens (wit, op naaldhout)']},
+'Lentinula edodes':{en:['Umber-brown, 5–12 cm, cracked scaly surface, veil remnants on the rim','White gills, finely toothed, browning where bruised','Tough, fibrous, central to slightly off-centre','White, firm; strong savoury smell when dried','White','Cultivated worldwide; wild only in East Asia'],
+ nl:['Omberbruin, 5–12 cm, barstend schubbig, velumresten aan de rand','Witte lamellen, fijn getand, bruin bij beschadiging','Taai, vezelig, centraal tot iets excentrisch','Wit, stevig; sterke hartige geur bij drogen','Wit','Wereldwijd gekweekt; in het wild alleen in Oost-Azië']},
+'Trametes versicolor':{en:['Thin leathery fan, 3–8 cm, velvety concentric zones in many colours','Underside white to cream with fine round pores, 3–5 per mm','Absent — attached broadly to the wood','Thin, tough, unchanging','White','Stereum (smooth underside) and Trametes hirsuta'],
+ nl:['Dunne leerachtige waaier, 3–8 cm, fluwelige kringen in vele kleuren','Onderzijde wit tot crème met fijne ronde poriën, 3–5 per mm','Ontbreekt — breed aangehecht aan het hout','Dun, taai, onveranderlijk','Wit','Korstzwammen (gladde onderzijde) en ruig elfenbankje']},
+'Ganoderma applanatum':{en:['Flat perennial bracket to 60 cm, dull grey-brown crusted upper side','White pore surface bruising brown at a scratch — the artist\u2019s trait','Absent','Corky brown, layered with annual tube growth','Cocoa-brown','G. australe and Fomes fomentarius (hoof-shaped)'],
+ nl:['Platte meerjarige console tot 60 cm, mat grijsbruine korst','Witte poriënlaag die bruin kleurt bij krassen — het tekenaarskenmerk','Ontbreekt','Kurkachtig bruin, gelaagd door jaarlijkse buisjesgroei','Cacaobruin','Zuidelijke tonderzwam en echte tonderzwam (hoefvormig)']},
+'Auricularia auricula-judae':{en:['Ear-shaped red-brown lobes, 3–8 cm, veined and folded','Smooth to slightly wrinkled, paler underside — no gills or pores','Absent or a short lateral attachment','Rubbery and gelatinous; drying hard, swelling again after rain','White','Exidia species (black, brain-like)'],
+ nl:['Oorvormige roodbruine lobben, 3–8 cm, geaderd en geplooid','Glad tot iets rimpelig, blekere onderzijde — geen lamellen of poriën','Ontbreekt of korte zijaanhechting','Rubberig en gelatineus; droogt hard op, zwelt na regen weer','Wit','Trilzwammen (Exidia, zwart en hersenvormig)']},
+'Laetiporus sulphureus':{en:['Thick fleshy orange-yellow brackets in tiers, 10–40 cm','Sulphur-yellow pore surface, fine and even','Absent — broadly attached','Soft and juicy when young, chalky and crumbling with age','White','Only eat young margins, cooked; some react badly'],
+ nl:['Dikke sappige oranjegele consoles in etages, 10–40 cm','Zwavelgele poriënlaag, fijn en gelijkmatig','Ontbreekt — breed aangehecht','Jong zacht en sappig, oud krijtachtig en brokkelig','Wit','Eet alleen jonge randen, verhit; sommigen reageren slecht']},
+'Flammulina velutipes':{en:['Orange-brown, sticky, 2–7 cm, in clusters on stumps in winter','Pale cream gills, fairly distant, adnexed','Dark brown velvety base, tough and cartilaginous','Thin, mild; the stems stay tough','White','Galerina marginata — deadly, ringed stem, brown spores'],
+ nl:['Oranjebruin, kleverig, 2–7 cm, in bundels op stobben in de winter','Bleek crème lamellen, vrij ver uiteen, aangehecht','Donkerbruin fluwelige voet, taai en kraakbeenachtig','Dun, mild; de stelen blijven taai','Wit','Bundelmostrompetje / Galerina marginata — dodelijk, geringde steel']},
+'Scleroderma citrinum':{en:['Firm dirty-yellow ball, 3–10 cm, thick warty rind, no stem','No gills or pores; cut flesh purple-black with a white marbling','Absent, attached by white cords','Hard; strong smell of gas or rubber','Blackish brown','True puffballs (Lycoperdon) have pure white flesh'],
+ nl:['Stevige vuilgele bol, 3–10 cm, dikke wrattige schil, geen steel','Geen lamellen of poriën; doorgesneden vlees purperzwart met witte marmering','Ontbreekt, met witte strengen bevestigd','Hard; sterke gas- of rubbergeur','Zwartbruin','Echte bovisten (Lycoperdon) hebben zuiver wit vlees']},
+'Phallus impudicus':{en:['Emerges from a white egg; white stalk 10–25 cm with a pitted head','Head covered in olive spore slime, carried off by flies','Hollow, white, spongy, brittle','Egg stage white and jelly-lined; adult smells of carrion','Olive slime','The egg stage resembles a puffball until cut'],
+ nl:['Komt uit een wit ei; witte steel 10–25 cm met gaatjeshoed','Hoed bedekt met olijfgroen sporenslijm, door vliegen weggedragen','Hol, wit, sponzig, breekbaar','Eistadium wit met gelei; volwassen aasgeur','Olijfgroen slijm','Het eistadium lijkt op een bovist tot je het doorsnijdt']},
+'Coprinopsis atramentaria':{en:['Grey, ovoid then bell-shaped, 3–7 cm, finely grooved and scaly at the top','Gills white, then grey, dissolving into black ink within a day','Whitish, hollow, with a faint ring zone low down','Thin and watery; deliquescing from the rim','Black','Poisonous only with alcohol (coprine) for up to three days'],
+ nl:['Grijs, eivormig dan klokvormig, 3–7 cm, fijn gegroefd, top schubbig','Lamellen wit, dan grijs, binnen een dag tot zwarte inkt vervloeiend','Wittig, hol, met vage ringzone laag op de steel','Dun en waterig; vervloeiend vanaf de rand','Zwart','Alleen giftig in combinatie met alcohol (coprine), tot drie dagen']},
+'Psilocybe semilanceata':{en:['Conical with a distinct nipple, 0.5–2.5 cm, olive to straw, slimy pellicle','Gills pale then purple-brown, narrowly attached','Thin, wavy, 4–10 cm, bruising blue-green at the base','Very thin; blue-green staining where handled','Purple-brown','Legally restricted in many countries — record only, do not collect'],
+ nl:['Kegelvormig met duidelijke punt, 0,5–2,5 cm, olijf tot strokleurig, slijmhuidje','Lamellen bleek, dan purperbruin, smal aangehecht','Dun, golvend, 4–10 cm, blauwgroen verkleurend aan de voet','Zeer dun; blauwgroen verkleurend bij aanraken','Purperbruin','In veel landen wettelijk beperkt — alleen vastleggen, niet verzamelen']},
+'Termitomyces titanicus':{en:['Pale grey-brown cap to 1 m across with a pointed umbo','Free white gills, crowded, very deep','Long, hard, with a root-like pseudorhiza down to the termite nest','White, firm, mild and sweet','White to pinkish cream','The largest edible mushroom known; grown by Macrotermes termites'],
+ nl:['Bleek grijsbruine hoed tot 1 m breed met spitse top','Vrije witte lamellen, dicht opeen, zeer diep','Lang, hard, met wortelachtige pseudorhiza tot in het termietennest','Wit, stevig, mild en zoet','Wit tot roze crème','De grootste bekende eetbare zwam; gekweekt door Macrotermes-termieten']},
+'Fomitopsis betulina':{en:['Smooth pale hoof or kidney shape, 5–20 cm, on birch only','White pore surface with a distinct rolled sterile margin','A short lateral knob, or absent','Corky white; smells faintly of green apple','White','Unmistakable on birch; historically used as a strop and a plaster'],
+ nl:['Gladde bleke hoef- of niervorm, 5–20 cm, uitsluitend op berk','Witte poriënlaag met duidelijk omgerolde steriele rand','Korte zijknobbel, of ontbrekend','Kurkachtig wit; ruikt zwak naar groene appel','Wit','Onmiskenbaar op berk; vroeger gebruikt als aanzetriem en wondpleister']}
+};
+
+const KEYT={
+ k1:{q:['1 · What is the overall shape of the fruit body?','1 · Wat is de algemene vorm van het vruchtlichaam?'],o:[
+  {l:['Cap on a stem, thin gills underneath','Hoed op een steel, dunne lamellen eronder'],sil:'convex',to:'k2'},
+  {l:['Cap on a stem, spongy layer of tubes and pores','Hoed op een steel, sponzige laag buisjes en poriën'],sil:'bolete',sp:['Boletus edulis','Leccinum scabrum']},
+  {l:['Funnel-shaped, blunt forking ridges, apricot smell','Trechtervormig, stompe gevorkte ribben, abrikozengeur'],sil:'funnel',sp:['Cantharellus cibarius']},
+  {l:['Shelf or bracket on wood, no real stem','Console of plank op hout, geen echte steel'],sil:'bracket',to:'k5'},
+  {l:['Rubbery ear-shaped lobes on dead branches','Rubberige oorvormige lobben op dode takken'],sil:'ear',sp:['Auricularia auricula-judae']},
+  {l:['Firm ball with no cap or stem','Stevige bol zonder hoed of steel'],sil:'puffball',sp:['Scleroderma citrinum']},
+  {l:['Stalked, slimy dark head, foul smell','Gesteeld, slijmerige donkere top, aasgeur'],sil:'stinkhorn',sp:['Phallus impudicus']}]},
+ k2:{q:['2 · Look at the stem base and the veil','2 · Kijk naar de steelvoet en het velum'],o:[
+  {l:['Sac-like volva or a rimmed bulb, and a ring on the stem','Zakvormige beurs of gerande knol, én een ring aan de steel'],sil:'convex',to:'k3'},
+  {l:['Ring present, no volva; tall cap with coarse scales','Ring aanwezig, geen beurs; hoge hoed met grove schubben'],sil:'parasol',to:'k4'},
+  {l:['No ring, growing on wood, often in tufts','Geen ring, groeiend op hout, vaak in bundels'],sil:'tuft',to:'k6'},
+  {l:['No ring, growing on soil or in grass','Geen ring, groeiend op de bodem of in gras'],sil:'funnel',to:'k7'}]},
+ k3:{q:['3 · Cap colour, warts and flesh reaction','3 · Hoedkleur, vlokken en reactie van het vlees'],o:[
+  {l:['Scarlet to orange with white warts','Scharlaken tot oranje met witte vlokken'],sil:'convex',sp:['Amanita muscaria']},
+  {l:['Olive to yellow-green, silky, sac-like volva','Olijf- tot geelgroen, zijdeachtig, zakvormige beurs'],sil:'convex',sp:['Amanita phalloides']},
+  {l:['Brown with pure white warts, smooth ring, rimmed bulb','Bruin met zuiver witte vlokken, gladde ring, gerande knol'],sil:'convex',sp:['Amanita pantherina']},
+  {l:['Pink-brown; cut flesh turns red within minutes','Roze-bruin; gesneden vlees kleurt binnen minuten rood'],sil:'convex',sp:['Amanita rubescens']}]},
+ k4:{q:['3 · Gill colour and spore print','3 · Lamelkleur en sporenprint'],o:[
+  {l:['Gills stay white; snakeskin stem, sliding double ring','Lamellen blijven wit; slangenhuidsteel, verschuifbare dubbele ring'],sil:'parasol',sp:['Macrolepiota procera']},
+  {l:['Gills dull grey-green with age; spore print green','Lamellen worden grauw groengrijs; sporenprint groen'],sil:'parasol',sp:['Chlorophyllum molybdites']},
+  {l:['Gills pink then chocolate-brown; thin ring, in grass','Lamellen roze dan chocoladebruin; dunne ring, in gras'],sil:'convex',sp:['Agaricus campestris']},
+  {l:['Huge pale cap with a rooting stem from a termite mound','Zeer grote bleke hoed met wortelende steel uit een termietenheuvel'],sil:'parasol',sp:['Termitomyces titanicus']}]},
+ k5:{q:['2 · Texture of the bracket and its pore surface','2 · Structuur van de console en de poriënlaag'],o:[
+  {l:['Thin, leathery, velvety concentric zones','Dun, leerachtig, fluwelige concentrische zones'],sil:'bracket',sp:['Trametes versicolor']},
+  {l:['Hard perennial, grey crust, pores bruising brown','Hard meerjarig, grijze korst, poriën bruin bij krassen'],sil:'bracket',sp:['Ganoderma applanatum']},
+  {l:['Soft thick orange-yellow tiers, sulphur pores','Zachte dikke oranjegele etages, zwavelgele poriën'],sil:'bracket',sp:['Laetiporus sulphureus']},
+  {l:['Smooth pale hoof on birch, rolled margin','Gladde bleke hoef op berk, omgerolde rand'],sil:'bracket',sp:['Fomitopsis betulina']}]},
+ k6:{q:['3 · Colour, taste and stem of the wood-dweller','3 · Kleur, smaak en steel van de houtbewoner'],o:[
+  {l:['Dense tufts, sulphur-yellow, very bitter','Dichte bundels, zwavelgeel, zeer bitter'],sil:'tuft',sp:['Hypholoma fasciculare']},
+  {l:['Sticky orange-brown cap, dark velvety stem, in winter','Kleverige oranjebruine hoed, donker fluwelige steel, in de winter'],sil:'tuft',sp:['Flammulina velutipes']},
+  {l:['Shell-shaped cap, gills far down a short side stem','Schelpvormige hoed, lamellen ver aflopend op korte zijsteel'],sil:'oyster',sp:['Pleurotus ostreatus']},
+  {l:['Bright orange funnel in clumps, gills glow faintly','Feloranje trechter in bundels, lamellen lichten zwak op'],sil:'funnel',sp:['Omphalotus olearius']},
+  {l:['Umber cap with cracked scales, tough fibrous stem','Omberbruine hoed met barstende schubben, taaie vezelige steel'],sil:'convex',sp:['Lentinula edodes']}]},
+ k7:{q:['3 · Cap shape, margin and bruising','3 · Hoedvorm, rand en verkleuring'],o:[
+  {l:['Grey clouded funnel, mealy smell, decurrent gills','Grijze nevelige trechter, meelgeur, aflopende lamellen'],sil:'funnel',sp:['Clitocybe nebularis']},
+  {l:['Olive-brown, long inrolled rim, bruising red-brown','Olijfbruin, lang ingerolde rand, roodbruin vlekkend'],sil:'funnel',sp:['Paxillus involutus']},
+  {l:['Small conical cap with a nipple, in grass, bruising blue','Kleine kegelhoed met punt, in gras, blauw verkleurend'],sil:'conical',sp:['Psilocybe semilanceata']},
+  {l:['Grey cylindric cap dissolving into black ink','Grijze cilindrische hoed die tot zwarte inkt vervloeit'],sil:'cylindric',sp:['Coprinopsis atramentaria']}]}
+};
+
+const HLT={
+'Amanita muscaria':{en:['Long used ritually in Siberia; studied for muscimol as a sedative, no clinical use.','Ibotenic acid and muscimol: nausea, confusion, delirium and deep sleep 30–120 min after eating.'],nl:['Ritueel gebruikt in Siberië; muscimol wordt onderzocht als kalmerend middel, geen klinische toepassing.','Iboteenzuur en muscimol: misselijkheid, verwardheid, delier en diepe slaap 30–120 min na inname.']},
+'Amanita phalloides':{en:[null,'Amatoxins destroy liver and kidney cells; symptoms only after 6–24 h, one cap can kill an adult.'],nl:[null,'Amatoxinen vernietigen lever- en niercellen; klachten pas na 6–24 uur, één hoed kan dodelijk zijn.']},
+'Amanita pantherina':{en:[null,'Higher ibotenic acid load than the fly agaric: agitation, hallucination, seizures; hospital cases every autumn.'],nl:[null,'Hoger gehalte iboteenzuur dan de vliegenzwam: onrust, hallucinaties, stuipen; elk najaar ziekenhuisopnames.']},
+'Amanita rubescens':{en:['Edible when thoroughly cooked; a good source of protein and B vitamins.','Raw flesh contains haemolysins that destroy red blood cells — never eat it uncooked.'],nl:['Eetbaar mits goed verhit; goede bron van eiwit en B-vitaminen.','Rauw vlees bevat hemolysinen die rode bloedcellen afbreken — nooit rauw eten.']},
+'Boletus edulis':{en:['High in protein, fibre, potassium and ergothioneine, an antioxidant that survives cooking.','Rarely upsets the stomach when old or raw; maggot-riddled specimens spoil fast.'],nl:['Rijk aan eiwit, vezels, kalium en ergothioneïne, een antioxidant die verhitting doorstaat.','Zelden maagklachten bij oude of rauwe exemplaren; door maden aangetaste vruchtlichamen bederven snel.']},
+'Leccinum scabrum':{en:['Light, low-calorie, rich in selenium and B vitamins.','Must be cooked through; raw or undercooked boletes cause gastric upset.'],nl:['Licht, caloriearm, rijk aan selenium en B-vitaminen.','Moet goed doorbakken worden; rauw of half gaar geeft maagklachten.']},
+'Cantharellus cibarius':{en:['One of the richest wild sources of vitamin D2 and iron; also high in carotenoids.','Poorly digested raw; large amounts can cause cramps even when cooked.'],nl:['Een van de rijkste wilde bronnen van vitamine D2 en ijzer; ook veel carotenoïden.','Rauw slecht verteerbaar; grote hoeveelheden kunnen ook gaar krampen geven.']},
+'Macrolepiota procera':{en:['Very low in fat, high in protein, zinc and copper; the cap fries like a schnitzel.','The tough stem is indigestible; some people react to the species even when it is correctly named.'],nl:['Zeer vetarm, veel eiwit, zink en koper; de hoed bakt als een schnitzel.','De taaie steel is onverteerbaar; sommigen reageren op de soort ook bij juiste naamgeving.']},
+'Agaricus campestris':{en:['Good protein, selenium and riboflavin; the classic field mushroom of European cooking.','Accumulates cadmium from roadside soil; avoid verges and industrial ground.'],nl:['Goed eiwit, selenium en riboflavine; de klassieke weidechampignon.','Hoopt cadmium op uit bermgrond; vermijd wegkanten en industrieterrein.']},
+'Chlorophyllum molybdites':{en:[null,'The most common cause of mushroom poisoning in North America: violent vomiting and bloody diarrhoea for 1–3 days.'],nl:[null,'De meest voorkomende paddenstoelvergiftiging in Noord-Amerika: heftig braken en bloederige diarree, 1–3 dagen.']},
+'Omphalotus olearius':{en:['Illudin S from this genus is the parent compound of the experimental anticancer drug irofulven.','Muscarine-like poisoning: severe cramps, vomiting and sweating within two hours; rarely fatal.'],nl:['Illudine S uit dit geslacht is de basis van het experimentele kankermiddel irofulven.','Muscarine-achtige vergiftiging: hevige krampen, braken en zweten binnen twee uur; zelden dodelijk.']},
+'Paxillus involutus':{en:[null,'Repeated meals sensitise the immune system; a later meal can trigger fatal haemolysis and kidney failure.'],nl:[null,'Herhaalde maaltijden sensibiliseren het afweersysteem; een latere maaltijd kan dodelijke hemolyse en nierfalen geven.']},
+'Clitocybe nebularis':{en:['Contains nebrodeolysin and lectins studied for antitumour and insecticidal activity.','Gastrointestinal poisoning in a large share of people, cooked or not; once sold as food.'],nl:['Bevat nebrodeolysine en lectinen die worden onderzocht op antitumor- en insectendodende werking.','Bij een groot deel van de mensen maag-darmklachten, gekookt of niet; vroeger verkocht als eetbaar.']},
+'Hypholoma fasciculare':{en:[null,'Steroid fasciculol toxins: prolonged vomiting, and in rare severe cases liver damage.'],nl:[null,'Steroïde fasciculol-toxinen: langdurig braken, in zeldzame ernstige gevallen leverschade.']},
+'Pleurotus ostreatus':{en:['Contains lovastatin, which lowers LDL cholesterol; also beta-glucans that support immune response.','Spores can trigger asthma in people handling large quantities indoors.'],nl:['Bevat lovastatine, dat LDL-cholesterol verlaagt; ook bèta-glucanen die de afweer ondersteunen.','Sporen kunnen astma uitlokken bij wie binnen grote hoeveelheden verwerkt.']},
+'Lentinula edodes':{en:['Lentinan is licensed in Japan as an adjuvant cancer therapy; eritadenine lowers blood cholesterol.','Raw or undercooked caps cause shiitake dermatitis — an itching, whip-like rash lasting days.'],nl:['Lentinan is in Japan geregistreerd als aanvullende kankertherapie; eritadenine verlaagt cholesterol.','Rauwe of half gare hoeden geven shiitakedermatitis — een jeukende, zweepslagachtige uitslag.']},
+'Trametes versicolor':{en:['Source of PSK and PSP, polysaccharide extracts used in Japan and China alongside chemotherapy.','Too tough to eat; only taken as a tea or extract. Interactions with immunosuppressants are possible.'],nl:['Bron van PSK en PSP, polysacharide-extracten die in Japan en China naast chemotherapie worden gebruikt.','Te taai om te eten; alleen als thee of extract. Interactie met afweeronderdrukkende medicijnen mogelijk.']},
+'Ganoderma applanatum':{en:['Traditional tonic in East Asia; triterpenes show anti-inflammatory activity in laboratory work.','Woody and inedible; the airborne spores are a recognised allergen near infected trees.'],nl:['Traditioneel tonicum in Oost-Azië; triterpenen tonen ontstekingsremmende werking in laboratoriumonderzoek.','Houtig en oneetbaar; de sporen zijn een erkend allergeen bij aangetaste bomen.']},
+'Auricularia auricula-judae':{en:['Rich in soluble fibre and iron; compounds in it reduce blood clotting and are studied for circulation.','That same anticoagulant effect matters for anyone on blood thinners; eat in moderation.'],nl:['Rijk aan oplosbare vezels en ijzer; stoffen erin remmen bloedstolling en worden onderzocht voor de bloedsomloop.','Datzelfde stollingsremmende effect is relevant bij bloedverdunners; eet met mate.']},
+'Laetiporus sulphureus':{en:['High in protein and potassium for a bracket; the young margin cooks like poultry.','Roughly one in ten people react badly — swollen lips, nausea, dizziness; worse from yew, locust and eucalyptus hosts.'],nl:['Voor een console eiwit- en kaliumrijk; de jonge rand bakt als gevogelte.','Ongeveer één op de tien reageert slecht — gezwollen lippen, misselijkheid, duizeligheid; erger van taxus, robinia en eucalyptus.']},
+'Flammulina velutipes':{en:['Cultivated enoki is high in fibre and ergothioneine; studied for immune-modulating proteins.','Wild collection is dangerous next to Galerina marginata; raw enoki has caused listeria outbreaks.'],nl:['Gekweekte enoki is vezel- en ergothioneïnerijk; onderzocht op afweermodulerende eiwitten.','Wild verzamelen is riskant naast Galerina marginata; rauwe enoki veroorzaakte listeria-uitbraken.']},
+'Scleroderma citrinum':{en:[null,'Poisonous raw and cooked: vomiting, sweating and, with large amounts, collapse within hours.'],nl:[null,'Giftig rauw en gekookt: braken, zweten en bij grote hoeveelheden flauwvallen binnen enkele uren.']},
+'Phallus impudicus':{en:['The white egg stage is eaten in parts of Europe and China and is a folk remedy for skin complaints.','The mature fungus is inedible; the smell alone provokes nausea. No serious toxin is known.'],nl:['Het witte eistadium wordt in delen van Europa en China gegeten en geldt als volksmiddel bij huidklachten.','De rijpe zwam is oneetbaar; de geur alleen al wekt misselijkheid. Geen ernstig gif bekend.']},
+'Coprinopsis atramentaria':{en:['Edible and mild on its own; a source of the compound coprine, studied as an alcohol deterrent.','With alcohol up to three days either side: flushing, palpitations and severe nausea (a disulfiram reaction).'],nl:['Op zichzelf eetbaar en mild; bron van coprine, onderzocht als alcoholremmer.','Met alcohol tot drie dagen ervoor of erna: blozen, hartkloppingen en hevige misselijkheid (disulfiramreactie).']},
+'Psilocybe semilanceata':{en:['Psilocybin is in advanced clinical trials for treatment-resistant depression and end-of-life anxiety.','Unsupervised use brings panic, disorientation and accidents; legally restricted in most countries — record only.'],nl:['Psilocybine zit in vergevorderde klinische studies naar therapieresistente depressie en existentiële angst.','Ongesuperviseerd gebruik geeft paniek, desoriëntatie en ongelukken; in de meeste landen wettelijk beperkt — alleen vastleggen.']},
+'Termitomyces titanicus':{en:['A major protein and mineral source in Zambia and Tanzania; sold fresh and dried at regional markets.','Safe when correctly named, but the harvest destroys the termite nest that produces it — take sparingly.'],nl:['Een belangrijke bron van eiwit en mineralen in Zambia en Tanzania; vers en gedroogd op regionale markten verkocht.','Veilig bij juiste naamgeving, maar de oogst vernielt het termietennest dat hem voortbrengt — spaarzaam plukken.']},
+'Fomitopsis betulina':{en:['Historically a wound dressing and styptic; polyporenic acid shows antibacterial and antiparasitic action.','Too corky to eat; taken only as a tea. Not toxic, but no proven clinical benefit.'],nl:['Historisch wondverband en bloedstelper; polyporeenzuur werkt antibacterieel en antiparasitair.','Te kurkachtig om te eten; alleen als thee. Niet giftig, maar geen bewezen klinisch nut.']}
 };
 
 const SP=[
@@ -700,7 +1090,7 @@ const MOIST=[0.45,1,1.25];
 const emptyDraft=()=>({id:null,photos:[],species:0,conf:1,subs:[0],host:0,habitat:0,count:1,notes:''});
 
 class Component extends DCLogic {
-  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,moist:1,hexNote:''};
+  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,moist:1,hexNote:'',photos:{},step:0,spOpen:false,keyMode:0,keyNode:'k1',keyTrail:[],keyEnd:null,keyOn:false,keyShape:null,keySub:null,keyHym:null};
   mapRef=React.createRef();
 
   t(){ const l=this.state.lang||(this.props.language==='Nederlands'?'nl':'en'); return T[l]||T.en; }
@@ -722,11 +1112,33 @@ class Component extends DCLogic {
     this.startGps();
   }
   componentDidUpdate(){
+    if(!this._photoRun) this.loadPhotos();
     if(this.state.view==='map') this.ensureMap();
     const p=this.state.pos;
     if(p){
       const key=p.lat.toFixed(2)+','+p.lon.toFixed(2);
       if(this._wxKey!==key){ this._wxKey=key; this.loadWeather(p.lat,p.lon); }
+    }
+  }
+
+  async loadPhotos(){
+    if(this._photoRun) return; this._photoRun=true;
+    let cached=[]; try{ cached=await all(META); }catch(e){}
+    const map={}; cached.forEach(x=>{ if(typeof x.k==='string'&&x.k.slice(0,3)==='ph:'){ const v=x.v;
+      if(v&&typeof v.src==='string'&&v.src.slice(0,5)==='https') map[x.k.slice(3)]=v; else del(META,x.k).catch(()=>{}); } });
+    if(Object.keys(map).length) this.setState({photos:map});
+    for(const sp of SP){
+      if(map[sp.ln]) continue;
+      try{
+        const r=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(sp.ln.replace(/ /g,'_')));
+        if(!r.ok) continue;
+        const j=await r.json();
+        const src=j.thumbnail&&j.thumbnail.source;
+        if(!src) continue;
+        const v={src:src.split('?')[0],page:(j.content_urls&&j.content_urls.desktop&&j.content_urls.desktop.page)||''};
+        put(META,{k:'ph:'+sp.ln,v}).catch(()=>{});
+        this.setState(st=>({photos:{...st.photos,[sp.ln]:v}}));
+      }catch(e){}
     }
   }
 
@@ -920,7 +1332,14 @@ class Component extends DCLogic {
     const sp=i=>{const s=SP[i]||SP[0]; return {...s,...s[lg]};};
     const fmt=n=>n.toLocaleString(loc,{minimumFractionDigits:4,maximumFractionDigits:4});
     const when=ts=>new Date(ts).toLocaleString(loc,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    const thumb=r=>r.photos&&r.photos[0]?'url('+r.photos[0]+')':'none';
+    const photoOf=ln=>(st.photos&&st.photos[ln])?st.photos[ln].src:null;
+const imgRef=u=>(node)=>{ if(node&&u&&node.getAttribute('src')!==u) node.setAttribute('src',u); };
+    const silSrc=(k,c,o)=>silUrl(k,c,o).slice(5,-2);
+    const thumb=r=>{ if(r.photos&&r.photos[0]) return r.photos[0];
+      const p=photoOf(r.species); if(p) return p;
+      const hit=SP.find(x=>x.ln===r.species); return hit?silSrc(morOf(hit.ln)[0],'#7d7268',0.45):''; };
+    const swatch=(s,spec)=>{ const p=photoOf(s.ln);
+      return p?'url("'+p+'") center/cover no-repeat':silUrl(morOf(s.ln)[0],CREAM,0.62)+' '+spec+' no-repeat, '+s.sw; };
     const nameOf=r=>{const hit=SP.find(x=>x.ln===r.species); return hit?hit[lg].cn:(r.common||r.species);};
     const tagCols=k=>k==='deadly'?{tagBg:ACC3,tagFg:ACC8}:k==='toxic'?{tagBg:ACC2,tagFg:ACC8}:k==='edible'?{tagBg:S2,tagFg:S8}:{tagBg:N2,tagFg:N8};
     const label=(arr,i)=>arr[i]!==undefined?arr[i]:'';
@@ -928,7 +1347,7 @@ class Component extends DCLogic {
       title:nameOf(r)+' · '+r.count+'×',
       meta:when(r.ts)+' · '+label(t.conf,r.conf),
       where:r.lat!=null?fmt(r.lat)+'° N, '+fmt(r.lon)+'° E · ±'+Math.round(r.acc||0)+' m':t.noLoc,
-      thumb:thumb(r), open:()=>this.setState({detailId:r.id,view:'detail'}),
+      thumb:thumb(r), hasThumb:!!thumb(r), imgRef:imgRef(thumb(r)), open:()=>this.setState({detailId:r.id,view:'detail'}),
     });
 
     const tabDef=[['home','M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z'],
@@ -939,7 +1358,7 @@ class Component extends DCLogic {
     const tabs=tabDef.map(([k,icon],i)=>{
       const on=st.view===k||(k==='records'&&st.view==='detail');
       return {label:t.tabs[i],icon,fg:on?ACC7:N6,bg:on?ACC1:'transparent',
-        go:()=>k==='new'?this.setState({view:'new',draft:emptyDraft(),speciesQuery:''}):this.setState({view:k,openSpecies:null,detailId:null,armed:null})};
+        go:()=>k==='new'?this.setState({view:'new',draft:emptyDraft(),speciesQuery:'',step:0,spOpen:false}):this.setState({view:k,openSpecies:null,detailId:null,armed:null})};
     });
     const listTabs=t.listTabs.map((lab,i)=>{const k=i?'species':'records';
       return {label:lab,bg:st.listMode===k?N1:'transparent',fg:st.listMode===k?ACC7:N6,pick:()=>this.setState({listMode:k,openSpecies:null})};});
@@ -959,6 +1378,8 @@ class Component extends DCLogic {
     const sq=st.speciesQuery.trim().toLowerCase();
     const draftIdx=SP.map((s,i)=>i).filter(i=>!sq||(SP[i][lg].cn+' '+SP[i].ln).toLowerCase().includes(sq));
     const regionIdx=SP.map((s,i)=>i).filter(i=>st.region==='all'||SP[i].reg.includes(st.region));
+    const keyHits=regionIdx.filter(i=>{const m=morOf(SP[i].ln);
+      return (!st.keyShape||m[0]===st.keyShape)&&(!st.keySub||m[1]===st.keySub)&&(!st.keyHym||m[2]===st.keyHym);});
 
     return {
       tRecords:t.records,tToday:t.today,tSpecies:t.species,tUnsure:t.unsure,tNewRecord:t.newRecord,tLatest:t.latest,tAll:t.all,tEmptyHome:t.emptyHome,
@@ -1031,7 +1452,7 @@ class Component extends DCLogic {
         return regionIdx.map(i=>({i,score:Math.min(1,this.phenology(SP[i].season,m)*MOIST[mi])}))
           .filter(x=>x.score>=0.3).sort((a,b)=>b.score-a.score).slice(0,6)
           .map(x=>{const s=sp(x.i);
-            return {common:s.cn,latin:s.ln,swatch:s.sw,pct:Math.round(x.score*100)+'%',
+            return {common:s.cn,latin:s.ln,swatch:swatch(s,'center/74%'),pct:Math.round(x.score*100)+'%',
               open:()=>this.setState({view:'records',listMode:'species',openSpecies:x.i})};});
       })(),
       noFruiting:(()=>{
@@ -1039,8 +1460,8 @@ class Component extends DCLogic {
         return !regionIdx.some(i=>this.phenology(SP[i].season,m)*MOIST[mi]>=0.3);
       })(),
 
-      startDraft:()=>this.setState({view:'new',draft:emptyDraft(),speciesQuery:''}),
-      startDraftHere:()=>this.setState({view:'new',draft:{...emptyDraft(),species:openIdx||0},speciesQuery:''}),
+      startDraft:()=>this.setState({view:'new',draft:emptyDraft(),speciesQuery:'',step:0,spOpen:false}),
+      startDraftHere:()=>this.setState({view:'new',draft:{...emptyDraft(),species:openIdx||0},speciesQuery:'',step:0,spOpen:false}),
       centerMe:()=>{ if(pos&&this._map) this._map.setView([pos.lat,pos.lon],16); else this.say(t.noFix); },
 
       predOptions:[{label:t.onlyFinds,value:''},...SP.map((s,i)=>({label:t.chancePrefix+' · '+s[lg].cn+' ('+this.seasonLabel(s.season)+')',value:String(i)}))
@@ -1070,8 +1491,8 @@ class Component extends DCLogic {
         return t.predNote.replace('{s}',this.seasonLabel(s.season)).replace('{b}',basis);
       })(),
 
-      draftHero:d.photos[0]?'url('+d.photos[0]+')':'none', draftNoPhoto:!d.photos.length,
-      draftThumbs:d.photos.map((p,i)=>({thumb:'url('+p+')',remove:()=>this.setState({draft:{...d,photos:d.photos.filter((_,j)=>j!==i)}})})),
+      draftHero:d.photos[0]||'', draftHeroRef:imgRef(d.photos[0]||''), draftHasPhoto:!!d.photos.length, draftNoPhoto:!d.photos.length,
+      draftThumbs:d.photos.map((p,i)=>({thumb:p,has:true,imgRef:imgRef(p),remove:()=>this.setState({draft:{...d,photos:d.photos.filter((_,j)=>j!==i)}})})),
       photoHint:d.photos.length?t.photoHintSome.replace('{n}',d.photos.length):t.photoHintNone,
       onPhoto:async(e)=>{
         const files=[...e.target.files].slice(0,3-this.state.draft.photos.length);
@@ -1088,8 +1509,12 @@ class Component extends DCLogic {
       speciesQuery:st.speciesQuery, onSpeciesQuery:(e)=>this.setState({speciesQuery:e.target.value}),
       noSpeciesMatch:draftIdx.length===0,
       speciesOptions:draftIdx.map(i=>{const s=sp(i);
-        return {common:s.cn,latin:s.ln,swatch:s.sw,tag:t.tags[s.tag],...tagCols(s.tag),
-          bg:d.species===i?ACC1:N1,border:d.species===i?ACC:'transparent',pick:()=>this.setState({draft:{...d,species:i}})};}),
+        return {common:s.cn,latin:s.ln,swatch:swatch(s,'center/74%'),tag:t.tags[s.tag],...tagCols(s.tag),
+          bg:d.species===i?ACC1:N1,border:d.species===i?ACC:'transparent',
+          pick:()=>this.setState({draft:{...d,species:i},spOpen:false,speciesQuery:''})};}),
+      spCollapsed:!st.spOpen, spExpanded:st.spOpen, tChange:t.change,
+      openSpeciesPicker:()=>this.setState({spOpen:true}),
+      pickedCommon:sp(d.species).cn, pickedLatin:sp(d.species).ln, pickedSwatch:swatch(sp(d.species),'center/74%'),
       confidenceOptions:t.conf.map((lab,i)=>({label:lab,bg:d.conf===i?ACC:N2,fg:d.conf===i?CREAM:N8,pick:()=>this.setState({draft:{...d,conf:i}})})),
       substrateOptions:t.subs.map((lab,i)=>{const on=d.subs.includes(i);
         return {label:lab,bg:on?ACC:N1,fg:on?CREAM:N8,toggle:()=>this.setState({draft:{...d,subs:on?d.subs.filter(x=>x!==i):[...d.subs,i]}})};}),
@@ -1101,12 +1526,28 @@ class Component extends DCLogic {
       decCount:()=>this.setState({draft:{...d,count:Math.max(1,d.count-1)}}),
       onNotes:(e)=>this.setState({draft:{...d,notes:e.target.value}}),
 
-      saveLabel:!d.photos.length?t.needPhoto:d.id?t.saveEdit:t.save,
-      saveBg:d.photos.length?ACC:N2, saveFg:d.photos.length?CREAM:N6,
+      saveLabel:d.id?t.saveEdit:t.save, saveBg:ACC, saveFg:CREAM,
       saveHint:pos?t.saveHintFix:t.saveHintNoFix,
-      cancelDraft:()=>this.setState({view:'home',draft:emptyDraft()}),
+      step0:st.step===0, step1:st.step===1, step2:st.step===2, step3:st.step===3, step4:st.step===4,
+      stepBars:t.steps.map((_,i)=>({bg:i<=st.step?ACC:N2})),
+      stepTitle:t.steps[st.step], stepCounter:t.stepOf.replace('{n}',st.step+1).replace('{t}',t.steps.length),
+      stepHasNext:st.step<t.steps.length-1,
+      stepNext:()=>this.setState({step:Math.min(t.steps.length-1,st.step+1)}),
+      stepBack:()=>{ if(st.step===0){ this.setState({view:'home',draft:emptyDraft(),step:0}); return; } this.setState({step:st.step-1}); },
+      stepBackLabel:st.step===0?t.discard:t.stepPrev, tStepNext:t.stepNext,
+      tTakePhoto:t.takePhoto, tFromLibrary:t.fromLibrary,
+      reviewCommon:sp(d.species).cn, reviewLatin:sp(d.species).ln,
+      reviewRows:[
+        {label:t.confidenceRow,value:label(t.conf,d.conf),step:1},
+        {label:t.coords,value:pos?fmt(pos.lat)+'° N, '+fmt(pos.lon)+'° E · ±'+Math.round(pos.acc||0)+' m':t.noLoc,step:0},
+        {label:t.substrateRow,value:d.subs.length?d.subs.map(i=>t.subs[i]).join(', '):t.notRecorded,step:2},
+        {label:t.host,value:t.hosts[d.host],step:2},
+        {label:t.habitat,value:t.habs[d.habitat],step:2},
+        {label:t.countRow,value:d.count+' '+t.fruitbodies,step:3},
+        {label:t.notesRow,value:d.notes.trim()||t.reviewNotesEmpty,step:3},
+      ].map(r=>({...r,edit:()=>this.setState({step:r.step})})),
+      cancelDraft:()=>this.setState({view:'home',draft:emptyDraft(),step:0}),
       saveDraft:async()=>{
-        if(!d.photos.length){ this.say(t.photoFirst); return; }
         const s=SP[d.species]||SP[0];
         const prev=d.id?rec.find(r=>r.id===d.id):null;
         const r={id:d.id||Date.now(),ts:prev?prev.ts:Date.now(),species:s.ln,common:s.en.cn,conf:d.conf,
@@ -1124,8 +1565,8 @@ class Component extends DCLogic {
       filteredRecords:filtered.map(mapRecord), noFiltered:filtered.length===0,
       emptyListLine:rec.length?t.emptyFilter:t.emptyList,
 
-      detailHero:detail?thumb(detail):'none',
-      detailThumbs:detail?(detail.photos||[]).map(p=>({thumb:'url('+p+')'})):[],
+      detailHero:detail?thumb(detail):'', detailHeroRef:imgRef(detail?thumb(detail):''), detailHasPhoto:!!(detail&&thumb(detail)),
+      detailThumbs:detail?(detail.photos||[]).map(p=>({thumb:p,has:true,imgRef:imgRef(p)})):[],
       detailCommon:detail?nameOf(detail):'', detailLatin:detail?detail.species:'',
       detailRows:detail?[
         {k:t.date,v:new Date(detail.ts).toLocaleString(loc)},
@@ -1140,7 +1581,7 @@ class Component extends DCLogic {
       ]:[],
       editRecord:()=>{ if(!detail) return;
         const i=SP.findIndex(s=>s.ln===detail.species);
-        this.setState({view:'new',speciesQuery:'',draft:{id:detail.id,photos:detail.photos||[],species:i<0?0:i,
+        this.setState({view:'new',speciesQuery:'',step:0,spOpen:false,draft:{id:detail.id,photos:detail.photos||[],species:i<0?0:i,
           conf:detail.conf||0,subs:detail.subs||[],host:detail.host||0,habitat:detail.habitat||0,
           count:detail.count||1,notes:detail.notes||''}});},
       deleteLabel:st.armed==='del'?t.sure:t.del,
@@ -1238,10 +1679,53 @@ class Component extends DCLogic {
       regionChips:[['all',t.regions.all],['eu',t.regions.eu],['na',t.regions.na],['sa',t.regions.sa],['af',t.regions.af],['as',t.regions.as],['oc',t.regions.oc]]
         .map(([k,lab])=>({label:lab,bg:st.region===k?ACC:N2,fg:st.region===k?CREAM:N8,pick:()=>this.setState({region:k})})),
       speciesCards:regionIdx.map(i=>{const s=sp(i);
-        return {common:s.cn,latin:s.ln,swatch:s.sw,tag:t.tags[s.tag],...tagCols(s.tag),season:this.seasonLabel(s.season),
+        return {common:s.cn,latin:s.ln,swatch:swatch(s,'10px center/54px'),tag:t.tags[s.tag],...tagCols(s.tag),season:this.seasonLabel(s.season),
           mine:rec.filter(r=>r.species===s.ln).length+'×',open:()=>this.setState({view:'records',listMode:'species',openSpecies:i})};}),
-      speciesOpen:!!open, speciesClosed:!open, closeSpecies:()=>this.setState({openSpecies:null}),
-      openCommon:open?open.cn:'', openLatin:open?open.ln:'', openSwatch:open?open.sw:'none',
+      keyOpen:st.keyOn&&!open,
+      tFieldTitle:t.fieldTitle, tHealthTitle:t.healthTitle, tHealthPos:t.healthPos, tHealthNeg:t.healthNeg,
+      openHealthPos:(open&&HLT[open.ln])?(HLT[open.ln][lg][0]||t.healthNoPos):'',
+      openHealthNeg:(open&&HLT[open.ln])?(HLT[open.ln][lg][1]||''):'',
+      openField:(open&&FLD[open.ln])?FLD[open.ln][lg].map((v,i)=>({label:t.fieldLabels[i],value:v})):[],
+      keyModes:t.key.modes.map((lab,i)=>({label:lab,bg:st.keyMode===i?N1:'transparent',fg:st.keyMode===i?ACC7:N6,pick:()=>this.setState({keyMode:i})})),
+      keySteps:st.keyMode===0, keyFilter:st.keyMode===1,
+      keyAsking:!st.keyEnd, keyDone:!!st.keyEnd,
+      keyQuestion:(KEYT[st.keyNode]||KEYT.k1).q[lg==='nl'?1:0],
+      keyOpts:(KEYT[st.keyNode]||KEYT.k1).o.map(o=>({label:o.l[lg==='nl'?1:0],
+        sil:silUrl(o.sil,'#5c5650',0.55)+' center/contain no-repeat',
+        pick:()=>this.setState(x=>({keyTrail:[...x.keyTrail,{node:x.keyNode,label:o.l[lg==='nl'?1:0]}],
+          keyNode:o.to||x.keyNode, keyEnd:o.sp||null}))})),
+      keyTrail:st.keyTrail.map((c,i)=>({label:c.label,
+        back:()=>this.setState({keyNode:c.node,keyTrail:st.keyTrail.slice(0,i),keyEnd:null})})),
+      keyStepBack:()=>this.setState(x=>{ if(!x.keyTrail.length) return {keyEnd:null};
+        const last=x.keyTrail[x.keyTrail.length-1];
+        return {keyNode:last.node,keyTrail:x.keyTrail.slice(0,-1),keyEnd:null}; }),
+      keyRestart:()=>this.setState({keyNode:'k1',keyTrail:[],keyEnd:null}),
+      tKeyStepBack:t.key.stepBack, tKeyRestart:t.key.restart, tKeyResult:t.key.result, tKeyEndNote:t.key.endNote,
+      keyEndResults:(st.keyEnd||[]).map(ln=>{const i=SP.findIndex(x=>x.ln===ln); const sx=sp(i<0?0:i);
+        return {common:sx.cn,latin:sx.ln,swatch:swatch(sx,'center/76%'),tag:t.tags[sx.tag],...tagCols(sx.tag),
+          open:()=>this.setState({keyOn:false,openSpecies:i<0?0:i})};}), speciesOpen:!!open, speciesClosed:!open&&!st.keyOn,
+      openKey:()=>this.setState({keyOn:true}), closeKey:()=>this.setState({keyOn:false}),
+      keyIcon:silUrl('parasol','#8f4f26',0.92)+' center/contain no-repeat',
+      tKeyOpen:t.key.open, tKeyBlurb:t.key.blurb, tKeyTitle:t.key.title, tKeyQ1:t.key.q1, tKeyQ2:t.key.q2, tKeyQ3:t.key.q3,
+      tKeyReset:t.key.reset, tKeyNone:t.key.none, tKeyNote:t.key.note,
+      resetKey:()=>this.setState({keyShape:null,keySub:null,keyHym:null}),
+      keyShapes:SHAPES.map(k=>{const on=st.keyShape===k;
+        return {label:t.key.shapes[k],bg:on?ACC1:N1,border:on?ACC:'transparent',fg:on?ACC8:N8,
+          sil:silUrl(k,on?'#8f4f26':'#5c5650',on?0.95:0.55)+' center/contain no-repeat',
+          pick:()=>this.setState({keyShape:on?null:k})};}),
+      keySubs:[null,'ground','grass','wood'].map(k=>{const on=st.keySub===k;
+        return {label:k?t.key.subs[k]:t.key.any,bg:on?ACC:N2,fg:on?CREAM:N8,pick:()=>this.setState({keySub:k})};}),
+      keyHyms:[null,'gills','pores','ridges','smooth'].map(k=>{const on=st.keyHym===k;
+        return {label:k?t.key.hym[k]:t.key.any,bg:on?ACC:N2,fg:on?CREAM:N8,pick:()=>this.setState({keyHym:k})};}),
+      keyCount:t.key.count.replace('{n}',keyHits.length),
+      keyEmpty:keyHits.length===0,
+      keyResults:keyHits.map(i=>{const s=sp(i);
+        return {common:s.cn,latin:s.ln,swatch:swatch(s,'center/76%'),tag:t.tags[s.tag],...tagCols(s.tag),
+          open:()=>this.setState({keyOn:false,openSpecies:i})};}),
+      closeSpecies:()=>this.setState({openSpecies:null}),
+      openHasPhoto:!!(open&&st.photos[open.ln]), openPhotoPage:open&&st.photos[open.ln]?st.photos[open.ln].page:'#',
+      tPhotoCredit:t.photoCredit,
+      openCommon:open?open.cn:'', openLatin:open?open.ln:'', openSwatch:open?swatch(open,'center/124px'):'none',
       openTag:open?t.tags[open.tag]:'', openTagBg:open?tagCols(open.tag).tagBg:N2, openTagFg:open?tagCols(open.tag).tagFg:N8,
       openSeason:open?this.seasonLabel(open.season):'',
       openRegions:open?open.reg.map(r=>t.regions[r]).join(' · '):'',
