@@ -171,17 +171,9 @@
               <div class="mv-kicker">{{ tChance }}</div>
               <div style="font:400 17px/1.2 var(--font-heading);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ predTitle }}</div>
             </div>
-            <div style="flex:none;font:400 22px/1 var(--font-heading);color:var(--color-accent-700)">{{ predPeak }}</div>
           </div>
-          <input type="range" min="1" max="12" step="1" value="{{ predMonth }}" onInput="{{ onPredMonth }}" style="width:100%;margin:12px 0 2px;accent-color:var(--color-accent)">
-          <div style="display:flex;justify-content:space-between;font:600 10px/1 var(--font-body);color:var(--color-neutral-600)">
-            <span>{{ tMonthFirst }}</span><span>{{ predMonthLabel }}</span><span>{{ tMonthLast }}</span>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:12px">
-            <sc-for list="{{ moistOptions }}" as="m" hint-placeholder-count="3">
-              <button class="mv-tap" onClick="{{ m.pick }}" style="flex:1;text-align:center;padding:9px 6px;border-radius:999px;font:600 11.5px/1.2 var(--font-body);background:{{ m.bg }};color:{{ m.fg }}">{{ m.label }}</button>
-            </sc-for>
-          </div>
+          <button class="mv-tap" onClick="{{ onSyncForecast }}" style="width:100%;margin-top:12px;padding:10px 14px;border-radius:999px;background:var(--color-accent-100);color:var(--color-accent-800);font:600 12px var(--font-body);text-align:center">{{ syncForecastLabel }}</button>
+          <sc-if value="{{ forecastBadge }}"><div style="font:500 11px var(--font-body);color:var(--color-neutral-600);margin-top:6px;text-align:center">{{ forecastBadge }}</div></sc-if>
           <div style="font-size:11.5px;line-height:1.55;color:var(--color-neutral-700);margin-top:11px">{{ predNote }}</div>
         </div>
       </sc-if>
@@ -682,15 +674,16 @@
 
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:520,&quot;height&quot;:900},&quot;language&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;English&quot;,&quot;Nederlands&quot;],&quot;default&quot;:&quot;English&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Locale&quot;},&quot;mapStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;street&quot;,&quot;terrain&quot;,&quot;satellite&quot;],&quot;default&quot;:&quot;street&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Map&quot;},&quot;photoSize&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1600,&quot;min&quot;:600,&quot;max&quot;:2000,&quot;step&quot;:100,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Storage&quot;},&quot;showLatin&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;}}">
-const DB='mycota', STORE='records', META='meta';
+const DB='mycota', STORE='records', META='meta', FORECAST='forecast';
 const ACC='var(--color-accent)',ACC1='var(--color-accent-100)',ACC2='var(--color-accent-200)',ACC3='var(--color-accent-300)',ACC7='var(--color-accent-700)',ACC8='var(--color-accent-800)',N1='var(--color-neutral-100)',N2='var(--color-neutral-200)',N6='var(--color-neutral-600)',N8='var(--color-neutral-800)',S1='var(--color-accent-2-100)',S2='var(--color-accent-2-200)',S7='var(--color-accent-2-700)',S8='var(--color-accent-2-800)',CREAM='#fdf6ea';
 
 function openDb(){
   return new Promise((res,rej)=>{
-    const q=indexedDB.open(DB,1);
+    const q=indexedDB.open(DB,2);
     q.onupgradeneeded=()=>{const db=q.result;
       if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE,{keyPath:'id'});
-      if(!db.objectStoreNames.contains(META)) db.createObjectStore(META,{keyPath:'k'});};
+      if(!db.objectStoreNames.contains(META)) db.createObjectStore(META,{keyPath:'k'});
+      if(!db.objectStoreNames.contains(FORECAST)) db.createObjectStore(FORECAST,{keyPath:'k'});};
     q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);
   });
 }
@@ -698,6 +691,50 @@ async function all(store){ const db=await openDb(); return new Promise((res,rej)
 async function put(store,val){ const db=await openDb(); return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite'); t.objectStore(store).put(val); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error);}); }
 async function del(store,key){ const db=await openDb(); return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite'); t.objectStore(store).delete(key); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error);}); }
 async function clearStore(store){ const db=await openDb(); return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite'); t.objectStore(store).clear(); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error);}); }
+
+const EARTH35_BASE='http://192.168.2.4:5050';
+
+function slugifySpecies(name){
+  return name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+}
+// The server serves three resolution tiers; the sync pre-caches at 8/12/15.
+// Cache keys snap to the tier representative so a tile cached by the sync is
+// still found when the user is at, say, zoom 13 or 16 in the field.
+function tierZoom(zoom){ return zoom<11?8:zoom<14?12:15; }
+function tileKey(species,zoom,bbox){
+  const tz=tierZoom(zoom);
+  // Rounding must be fine enough that two visibly different viewports at the
+  // same tier get different keys: 0.01deg (~1.1 km) is coarser than a whole
+  // 100 m-tier viewport, so it tightens as the tier gets finer.
+  const step=tz===8?0.01:tz===12?0.005:0.001;
+  const r=v=>(Math.round(v/step)*step).toFixed(4);
+  return species+'|'+tz+'|'+bbox.map(r).join(',');
+}
+async function fetchForecastTile(species,zoom,bbox){
+  const url=EARTH35_BASE+'/api/fruiting/grid?species='+encodeURIComponent(species)
+    +'&zoom='+zoom+'&bbox='+bbox.map(v=>v.toFixed(5)).join(',');
+  const r=await fetch(url,{signal:AbortSignal.timeout(6000)});
+  if(!r.ok) throw new Error('forecast fetch failed: '+r.status);
+  const geojson=await r.json();
+  const rec={k:tileKey(species,zoom,bbox),species,tier:tierZoom(zoom),bbox,geojson,fetchedAt:Date.now()};
+  await put(FORECAST,rec);
+  return rec;
+}
+async function getCachedForecastTile(species,zoom,bbox){
+  const cached=await all(FORECAST);
+  const key=tileKey(species,zoom,bbox);
+  const exact=cached.find(r=>r.k===key);
+  if(exact) return exact;
+  // The pre-field sync caches one wide tile per tier, so once the user pans or
+  // zooms an exact key match is rare. Fall back to the newest cached tile of the
+  // same species and tier whose extent still covers the current viewport.
+  const tier=tierZoom(zoom), eps=1e-9;
+  const covering=cached.filter(r=>r.species===species&&r.tier===tier&&Array.isArray(r.bbox)
+    &&r.bbox[0]<=bbox[0]+eps&&r.bbox[1]<=bbox[1]+eps
+    &&r.bbox[2]>=bbox[2]-eps&&r.bbox[3]>=bbox[3]-eps);
+  if(!covering.length) return null;
+  return covering.sort((a,b)=>b.fetchedAt-a.fetchedAt)[0];
+}
 
 const T={
   en:{loc:'en-GB',records:'records',today:'today',species:'species',unsure:'unsure',newRecord:'Record a new find',latest:'Latest finds',all:'All',
@@ -768,7 +805,12 @@ const T={
     wxVerdict:{0:'Dry week — fruiting held back.',1:'Normal moisture — average fruiting.',2:'Wet week — good fruiting conditions.'},
     fruitingNow:'Fruiting now',noFruiting:'Nothing in season at this moisture level. Change the month on the map to look ahead.',
     fruitingBasis:'{m} · {v}',
-    predBasisOwn:'{n} own finds of this species',predBasisNone:'no own finds of this species yet'},
+    predBasisOwn:'{n} own finds of this species',predBasisNone:'no own finds of this species yet',
+    syncForecast:'Sync forecast for this area',syncing:'Syncing…',
+    syncDone:'{n} forecast tiles cached for offline use.',
+    syncPartial:'{n} tiles cached, {m} failed — check you’re on home wifi.',
+    forecastAsOf:'Forecast as of {t}',forecastCached:'Cached forecast (offline)',
+    forecastOffline:'No forecast available offline for this area yet.'},
   nl:{loc:'nl-NL',records:'vondsten',today:'vandaag',species:'soorten',unsure:'niet zeker',newRecord:'Nieuwe vondst vastleggen',latest:'Laatste vondsten',all:'Alles',
     emptyHome:'Nog niets vastgelegd. Zet GPS aan, maak een foto van de vondst en de waarneming staat binnen een halve minuut op dit toestel — ook zonder bereik.',
     setObserver:'Waarnemer en project instellen',nothingStored:'Nog niets opgeslagen',
@@ -837,7 +879,12 @@ const T={
     wxVerdict:{0:'Droge week — vruchtvorming blijft achter.',1:'Normaal vocht — gemiddelde vruchtvorming.',2:'Natte week — goede omstandigheden.'},
     fruitingNow:'Nu in vruchtvorming',noFruiting:'Niets in seizoen bij dit vochtniveau. Verzet de maand op de kaart om vooruit te kijken.',
     fruitingBasis:'{m} · {v}',
-    predBasisOwn:'{n} eigen vondsten van deze soort',predBasisNone:'nog geen eigen vondsten van deze soort'},
+    predBasisOwn:'{n} eigen vondsten van deze soort',predBasisNone:'nog geen eigen vondsten van deze soort',
+    syncForecast:'Verwachting voor dit gebied synchroniseren',syncing:'Bezig met synchroniseren…',
+    syncDone:'{n} verwachtingstegels opgeslagen voor offline gebruik.',
+    syncPartial:'{n} tegels opgeslagen, {m} mislukt — controleer of je op de thuis-wifi zit.',
+    forecastAsOf:'Verwachting van {t}',forecastCached:'Opgeslagen verwachting (offline)',
+    forecastOffline:'Nog geen offline verwachting beschikbaar voor dit gebied.'},
 };
 
 const SIL={
@@ -1090,7 +1137,7 @@ const MOIST=[0.45,1,1.25];
 const emptyDraft=()=>({id:null,photos:[],species:0,conf:1,subs:[0],host:0,habitat:0,count:1,notes:''});
 
 class Component extends DCLogic {
-  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,moist:1,hexNote:'',photos:{},step:0,spOpen:false,keyMode:0,keyNode:'k1',keyTrail:[],keyEnd:null,keyOn:false,keyShape:null,keySub:null,keyHym:null};
+  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,moist:1,hexNote:'',photos:{},step:0,spOpen:false,keyMode:0,keyNode:'k1',keyTrail:[],keyEnd:null,keyOn:false,keyShape:null,keySub:null,keyHym:null,syncingForecast:false,forecastAsOf:null};
   mapRef=React.createRef();
 
   t(){ const l=this.state.lang||(this.props.language==='Nederlands'?'nl':'en'); return T[l]||T.en; }
@@ -1243,54 +1290,67 @@ class Component extends DCLogic {
     setTimeout(()=>this._map&&this._map.invalidateSize(),50);
     this.drawMarkers();
   }
-  drawPrediction(){
+  async drawPrediction(){
     if(!this._pred||!this._map) return;
-    this._pred.clearLayers();
     const idx=this.state.predSpecies;
-    if(idx==null){ if(this.state.hexNote) this.setState({hexNote:''}); return; }
+    if(idx==null){
+      this._pred.clearLayers(); this._predKey=null;
+      if(this.state.hexNote) this.setState({hexNote:'',forecastAsOf:null});
+      return;
+    }
     const L=window.L, map=this._map, sp=SP[idx];
-    const ph=this.phenology(sp.season,this.state.predMonth), mf=MOIST[this.state.moist];
-    const sites=this.state.records.filter(r=>r.lat!=null);
-    const own=sites.filter(r=>r.species===sp.ln);
-    const hosts=new Set(own.map(r=>r.host)), habs=new Set(own.map(r=>r.habitat));
+    const species=slugifySpecies(sp.ln);
+    const zoom=map.getZoom();
+    const b=map.getBounds();
+    const bbox=[b.getWest(),b.getSouth(),b.getEast(),b.getNorth()];
+    // Guard: setState below re-renders, which re-enters ensureMap/drawMarkers/drawPrediction.
+    // Without this key check that would be an endless fetch loop.
+    const key=tileKey(species,zoom,bbox);
+    if(this._predKey===key) return;
+    this._predKey=key;
+    this._pred.clearLayers();
 
-    const R=1000/Math.sqrt(3);
-    const degLat=m=>m/110540, degLon=(m,lat)=>m/(111320*Math.cos(lat*Math.PI/180));
-    const b=map.getBounds().pad(0.08);
-    const midLat=(b.getNorth()+b.getSouth())/2;
-    const dy=degLat(Math.sqrt(3)*R), dx=degLon(1.5*R,midLat);
-    const cols=Math.ceil((b.getEast()-b.getWest())/dx)+1, rows=Math.ceil((b.getNorth()-b.getSouth())/dy)+1;
-    if(cols*rows>2600){ if(!this.state.hexNote) this.setState({hexNote:'zoom'}); return; }
-    if(this.state.hexNote) this.setState({hexNote:''});
+    let tile=null, fromCache=false;
+    try{
+      tile=await fetchForecastTile(species,zoom,bbox);
+      // A newer call (species change, pan, zoom) started while we awaited —
+      // it owns this._pred now, so drop this result instead of drawing stale hexes.
+      if(this._predKey!==key) return;
+    }catch(err){
+      if(this._predKey!==key) return;
+      tile=await getCachedForecastTile(species,zoom,bbox);
+      if(this._predKey!==key) return;
+      fromCache=true;
+    }
+    if(!tile){ this.setState({hexNote:'offline',forecastAsOf:null}); return; }
+    this.setState({hexNote:fromCache?'cached':'', forecastAsOf:tile.fetchedAt});
 
-    const score=(lat,lon)=>{
-      let sum=0;
-      for(const r of sites){
-        const dxm=(lon-r.lon)*111320*Math.cos(lat*Math.PI/180), dym=(lat-r.lat)*110540;
-        const dist=Math.sqrt(dxm*dxm+dym*dym);
-        if(dist>2500) continue;
-        const base=r.species===sp.ln?1:(hosts.has(r.host)?0.6:(habs.has(r.habitat)?0.4:0.14));
-        sum+=base*Math.exp(-Math.pow(dist/700,2));
-      }
-      return Math.max(0,Math.min(1,ph*mf*(0.35+0.65*(1-Math.exp(-1.3*sum)))));
-    };
-
-    for(let i=0;i<cols;i++){
-      const lon=b.getWest()+i*dx;
-      for(let j=0;j<rows;j++){
-        const lat=b.getSouth()+j*dy+(i%2?dy/2:0);
-        const s=score(lat,lon);
-        if(s<0.06) continue;
-        const ring=[];
-        for(let k=0;k<6;k++){
-          const a=k*Math.PI/3;
-          ring.push([lat+degLat(R*Math.sin(a)),lon+degLon(R*Math.cos(a),lat)]);
-        }
-        const col=s<0.34?'#7a8a5e':s<0.67?'#c9973f':'#c67139';
-        L.polygon(ring,{color:col,weight:1,opacity:0.5,fillColor:col,fillOpacity:0.12+0.45*s})
-          .bindTooltip(Math.round(s*100)+'% · 1 km²',{direction:'top',sticky:true}).addTo(this._pred);
+    for(const f of tile.geojson.features){
+      const p=f.properties.prob;
+      const col=p<0.34?'#7a8a5e':p<0.67?'#c9973f':'#c67139';
+      L.geoJSON(f,{style:{color:col,weight:1,opacity:0.5,fillColor:col,fillOpacity:0.12+0.45*p}})
+        .bindTooltip(Math.round(p*100)+'% · '+(tile.geojson.tier||'')
+          ,{direction:'top',sticky:true}).addTo(this._pred);
+    }
+  }
+  async syncForecastForViewport(){
+    if(!this._map) return;
+    const b=this._map.getBounds();
+    const bbox=[b.getWest(),b.getSouth(),b.getEast(),b.getNorth()];
+    this.setState({syncingForecast:true});
+    const tiers=[8,12,15];   // one request per resolution tier: 10km, 1km, 100m
+    let ok=0, fail=0;
+    for(const idx in SP){
+      const species=slugifySpecies(SP[idx].ln);
+      for(const zoom of tiers){
+        try{ await fetchForecastTile(species,zoom,bbox); ok++; }
+        catch(err){ fail++; }
       }
     }
+    this.setState({syncingForecast:false});
+    this._predKey=null; this.drawPrediction();
+    this.say(fail===0 ? this.t().syncDone.replace('{n}',ok)
+                      : this.t().syncPartial.replace('{n}',ok).replace('{m}',fail));
   }
   drawMarkers(){
     this.drawPrediction();
@@ -1480,16 +1540,14 @@ const imgRef=u=>(node)=>{ if(node&&u&&node.getAttribute('src')!==u) node.setAttr
       },
       predOn:st.predSpecies!=null,
       predTitle:st.predSpecies!=null?sp(st.predSpecies).cn+' · '+this.seasonLabel(SP[st.predSpecies].season):'',
-      predPeak:st.predSpecies!=null?Math.round(this.phenology(SP[st.predSpecies].season,st.predMonth)*MOIST[st.moist]*100)+'%':'',
-      predMonth:st.predMonth, predMonthLabel:t.monthsFull[st.predMonth-1],
-      onPredMonth:(e)=>this.setState({predMonth:Number(e.target.value)}),
-      moistOptions:[t.dry,t.normal,t.wet].map((lab,i)=>({label:lab,bg:st.moist===i?ACC:N2,fg:st.moist===i?CREAM:N8,pick:()=>this.setState({moist:i})})),
-      predNote:st.predSpecies==null?'':(()=>{
-        const s=SP[st.predSpecies], own=rec.filter(r=>r.species===s.ln).length;
-        if(st.hexNote==='zoom') return t.hexZoom;
-        const basis=own?t.predBasisOwn.replace('{n}',own):t.predBasisNone;
-        return t.predNote.replace('{s}',this.seasonLabel(s.season)).replace('{b}',basis);
-      })(),
+      syncForecastLabel: st.syncingForecast ? t.syncing : t.syncForecast,
+      onSyncForecast: ()=>this.syncForecastForViewport(),
+      forecastBadge: st.forecastAsOf
+        ? (st.hexNote==='cached'
+            ? t.forecastCached
+            : t.forecastAsOf.replace('{t}', new Date(st.forecastAsOf).toLocaleTimeString(loc)))
+        : (st.hexNote==='offline' ? t.forecastOffline : ''),
+      predNote:st.predSpecies==null?'':this.seasonLabel(SP[st.predSpecies].season),
 
       draftHero:d.photos[0]||'', draftHeroRef:imgRef(d.photos[0]||''), draftHasPhoto:!!d.photos.length, draftNoPhoto:!d.photos.length,
       draftThumbs:d.photos.map((p,i)=>({thumb:p,has:true,imgRef:imgRef(p),remove:()=>this.setState({draft:{...d,photos:d.photos.filter((_,j)=>j!==i)}})})),
