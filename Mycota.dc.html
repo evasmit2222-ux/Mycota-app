@@ -177,7 +177,10 @@
               <span class="mv-kicker">{{ tForecastDay }}</span>
               <span style="font:600 12px var(--font-body);color:var(--color-accent-700);white-space:nowrap">{{ predDayLabel }}</span>
             </div>
-            <input type="range" min="0" max="7" step="1" value="{{ predDay }}" onChange="{{ onPredDay }}" style="width:100%;margin-top:6px;accent-color:var(--color-accent)"/>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+              <button class="mv-tap" onClick="{{ onTogglePredPlay }}" aria-label="{{ predPlayLabel }}" style="flex:0 0 auto;width:30px;height:30px;border-radius:999px;background:var(--color-accent-100);color:var(--color-accent-800);font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center">{{ predPlayIcon }}</button>
+              <input type="range" min="0" max="7" step="1" value="{{ predDay }}" onChange="{{ onPredDay }}" style="flex:1;accent-color:var(--color-accent)"/>
+            </div>
           </div>
           <button class="mv-tap" onClick="{{ onSyncForecast }}" style="width:100%;margin-top:12px;padding:10px 14px;border-radius:999px;background:var(--color-accent-100);color:var(--color-accent-800);font:600 12px var(--font-body);text-align:center">{{ syncForecastLabel }}</button>
           <sc-if value="{{ forecastBadge }}"><div style="font:500 11px var(--font-body);color:var(--color-neutral-600);margin-top:6px;text-align:center">{{ forecastBadge }}</div></sc-if>
@@ -832,6 +835,7 @@ const T={
     predNote:'1 km hexagon grid scored from phenology ({s}), soil moisture and {b}; cells near places with the same host tree or habitat score too. Darker = higher chance.',
     hexZoom:'Zoom in to draw the 1 km grid.',
     forecastDay:'Forecast day',forecastToday:'Today',forecastTomorrow:'Tomorrow',forecastDayOffset:'+{n}d',
+    forecastPlay:'Play forecast',forecastPause:'Pause forecast',
     forecastNoData:'Forecast not computed that far out yet — try a nearer day.',
     weather:'Weather & soil moisture',refresh:'Refresh',rain7:'{mm} mm rain in the past week',
     wxNoPos:'No position yet — turn on GPS for a local forecast.',wxLoading:'Fetching forecast…',
@@ -908,6 +912,7 @@ const T={
     predNote:'Zeshoekig raster van 1 km, gescoord op fenologie ({s}), bodemvocht en {b}; cellen bij plekken met dezelfde waardboom of hetzelfde bostype scoren mee. Donker = hoogste kans.',
     hexZoom:'Zoom in om het 1 km-raster te tekenen.',
     forecastDay:'Verwachtingsdag',forecastToday:'Vandaag',forecastTomorrow:'Morgen',forecastDayOffset:'+{n}d',
+    forecastPlay:'Verwachting afspelen',forecastPause:'Verwachting pauzeren',
     forecastNoData:'Nog geen verwachting zo ver vooruit — probeer een dichtere dag.',
     weather:'Weer & bodemvocht',refresh:'Verversen',rain7:'{mm} mm regen in de afgelopen week',
     wxNoPos:'Nog geen positie — zet GPS aan voor een lokale verwachting.',wxLoading:'Verwachting ophalen…',
@@ -1173,7 +1178,7 @@ const MOIST=[0.45,1,1.25];
 const emptyDraft=()=>({id:null,photos:[],species:0,conf:1,subs:[0],host:0,habitat:0,count:1,notes:''});
 
 class Component extends DCLogic {
-  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,predDay:0,moist:1,hexNote:'',photos:{},step:0,spOpen:false,keyMode:0,keyNode:'k1',keyTrail:[],keyEnd:null,keyOn:false,keyShape:null,keySub:null,keyHym:null,syncingForecast:false,forecastAsOf:null};
+  state={view:'home',listMode:'records',records:[],draft:emptyDraft(),pos:null,posErr:null,watching:false,toast:'',openSpecies:null,detailId:null,query:'',filter:0,speciesQuery:'',region:'all',observer:'',project:'',armed:null,lang:null,predSpecies:null,predMonth:new Date().getMonth()+1,predDay:0,moist:1,hexNote:'',photos:{},step:0,spOpen:false,keyMode:0,keyNode:'k1',keyTrail:[],keyEnd:null,keyOn:false,keyShape:null,keySub:null,keyHym:null,syncingForecast:false,forecastAsOf:null,predPlaying:false};
   mapRef=React.createRef();
 
   t(){ const l=this.state.lang||(this.props.language==='Nederlands'?'nl':'en'); return T[l]||T.en; }
@@ -1247,7 +1252,19 @@ class Component extends DCLogic {
     const sum=wx.days.filter(d=>d.date<today).reduce((n,d)=>n+(d.mm||0),0);
     return sum<10?0:sum<=35?1:2;
   }
-  componentWillUnmount(){ if(this.watchId!=null&&navigator.geolocation) navigator.geolocation.clearWatch(this.watchId); }
+  componentWillUnmount(){ if(this.watchId!=null&&navigator.geolocation) navigator.geolocation.clearWatch(this.watchId); this.stopPredPlay(); }
+
+  togglePredPlay(){
+    if(this.state.predPlaying) this.stopPredPlay();
+    else{
+      this._playTimer=setInterval(()=>this.setState(s=>({predDay:(s.predDay+1)%8})),2000);
+      this.setState({predPlaying:true});
+    }
+  }
+  stopPredPlay(){
+    if(this._playTimer!=null){ clearInterval(this._playTimer); this._playTimer=null; }
+    if(this.state.predPlaying) this.setState({predPlaying:false});
+  }
 
   say(msg){ clearTimeout(this._t); this.setState({toast:msg}); this._t=setTimeout(()=>this.setState({toast:''}),2800); }
   setMeta(k,v){ this.setState({[k]:v}); put(META,{k,v}).catch(()=>{}); }
@@ -1573,6 +1590,7 @@ const imgRef=u=>(node)=>{ if(node&&u&&node.getAttribute('src')!==u) node.setAttr
       predValue:st.predSpecies==null?'':String(st.predSpecies),
       onPredSelect:(e)=>{
         const v=e.target.value===''?null:Number(e.target.value);
+        if(v==null) this.stopPredPlay();
         this.setState({predSpecies:v});
         if(v!=null&&this._map&&this._map.getZoom()<12){
           if(pos) this._map.setView([pos.lat,pos.lon],13);
@@ -1588,7 +1606,11 @@ const imgRef=u=>(node)=>{ if(node&&u&&node.getAttribute('src')!==u) node.setAttr
       predDayLabel: !st.predDay ? t.forecastToday
         : st.predDay===1 ? t.forecastTomorrow
         : t.forecastDayOffset.replace('{n}',st.predDay)+' · '+new Date(offsetDateStr(st.predDay)).toLocaleDateString(loc,{day:'numeric',month:'short'}),
-      onPredDay:(e)=>this.setState({predDay:Number(e.target.value)}),
+      onPredDay:(e)=>{ this.stopPredPlay(); this.setState({predDay:Number(e.target.value)}); },
+      predPlaying:st.predPlaying,
+      onTogglePredPlay:()=>this.togglePredPlay(),
+      predPlayIcon: st.predPlaying?'⏸':'▶',
+      predPlayLabel: st.predPlaying?t.forecastPause:t.forecastPlay,
       syncForecastLabel: st.syncingForecast ? t.syncing : t.syncForecast,
       onSyncForecast: ()=>this.syncForecastForViewport(),
       forecastBadge: st.hexNote==='nodata' ? t.forecastNoData
