@@ -702,7 +702,7 @@ async function put(store,val){ const db=await openDb(); return new Promise((res,
 async function del(store,key){ const db=await openDb(); return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite'); t.objectStore(store).delete(key); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error);}); }
 async function clearStore(store){ const db=await openDb(); return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite'); t.objectStore(store).clear(); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error);}); }
 
-const EARTH35_BASE='http://192.168.2.4:5050';
+const EARTH35_BASE='http://192.168.2.6:5050';
 
 function slugifySpecies(name){
   return name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
