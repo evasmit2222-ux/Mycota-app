@@ -1312,8 +1312,8 @@ class Component extends DCLogic {
       this._mapDiv.style.cssText='position:absolute;inset:0';
     }
     if(this._mapDiv.parentNode!==el){ el.appendChild(this._mapDiv); if(this._map) setTimeout(()=>this._map&&this._map.invalidateSize(),30); }
-    const styles={street:{u:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',a:'© OpenStreetMap · © CARTO'},
-      terrain:{u:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',a:'© OpenStreetMap · © CARTO'},
+    const styles={street:{u:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',a:'© OpenStreetMap contributors'},
+      terrain:{u:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',a:'© Esri · © OpenStreetMap contributors'},
       satellite:{u:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',a:'Esri World Imagery'}};
     const key=this.props.mapStyle||'street', tile=styles[key]||styles.street;
     if(!this._map){
